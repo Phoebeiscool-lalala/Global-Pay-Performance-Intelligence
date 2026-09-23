@@ -2,6 +2,26 @@
 
 依据 `Global_Pay_Performance_Decision_Intelligence_Phase2_PRD_V0.2.docx` 继续设计的 Phase 2 原型。产品从 Phase 1 的外部情报检索，扩展为可解释的跨市场比较、模式识别、设计选项、Scenario Lab、需求驱动的 Vendor Fit 和市场信号。
 
+## V2 P0 架构升级
+
+V2 在保留现有 UI、导航和页面的前提下，新增统一决策链：
+
+```text
+Source → Claim → Fact → Practice / Regulation → Operational Requirement
+       → Vendor Capability → Scenario → Decision Insight
+```
+
+- 新增 `Source`、`Claim`、`Fact`、`Regulation`、`OperationalRequirement`、关系边和 Change Detection 基础表。
+- Evidence Engine 将 `Evidence Quality` 与 `Evidence Status` 分离；状态统一为 `VERIFIED / SUPPORTED / CONFLICTING / INSUFFICIENT / STALE`。
+- Source Reliability 根据 `Source Authority × Claim Type × Independence × Commercial Interest` 动态判断。
+- Scenario Lab 支持 Country、Employee Count、Payroll、Commission、Local HR Capacity、Outsourcing、Reporting、Integration 与 Compliance 输入。
+- Scenario 自动生成 Practice、Regulation 和 Operational Requirements，并直接带入 Vendor Fit。
+- Vendor Fit 只输出 `FIT / PARTIAL FIT / GAP / UNKNOWN`，不计算总分，不宣布最佳 Vendor。
+- Ask Intelligence 使用同一 Evidence Graph，展示 Evidence Basis；证据不足时明确返回 Insufficient。
+- Mock Data 位于 `data/v2-demo.json`，业务规则拆分到 `engines/` 与 `services/`。
+
+V2 演示数据用于验证产品与技术链路，并非实际日本法规、市场研究或供应商选型结论。
+
 ## 本地运行
 
 需要 Python 3.10+，无第三方依赖：
@@ -45,6 +65,10 @@ styles.css            响应式界面与决策支持组件
 app.js                演示数据、证据逻辑和交互流程
 server.py             SQLite 数据模型、本地服务、Phase 1 API 与 Data Readiness Gate
 tests/test_phase2.py  Phase 2 schema、静态入口和护栏验证
+models.py             V2 统一类型与状态枚举
+services/             Evidence、Scenario 与 Vendor Fit 后端服务
+data/v2-demo.json     前后端共享的 V2 演示数据
+engines/              静态网页使用的 Evidence、Scenario 与 Vendor Fit 引擎
 ```
 
 ## 下一步生产化

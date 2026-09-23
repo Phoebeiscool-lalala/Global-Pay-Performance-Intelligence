@@ -1,0 +1,199 @@
+{
+  "meta": {
+    "version": "2.0-demo",
+    "asOf": "2026-09-23",
+    "disclaimer": "演示数据仅用于验证产品链路，不构成法律、市场或供应商建议。"
+  },
+  "sources": [
+    {
+      "id": "src-jp-mhlw",
+      "name": "Japan Ministry of Health, Labour and Welfare — official guidance",
+      "sourceType": "GOVERNMENT",
+      "authorityLevel": 5,
+      "isFirstParty": true,
+      "isIndependent": true,
+      "commercialInterest": false,
+      "url": "https://www.mhlw.go.jp/",
+      "publishedDate": "2026-04-01",
+      "effectiveDate": "2026-04-01",
+      "lastVerified": "2026-09-20"
+    },
+    {
+      "id": "src-jp-nta",
+      "name": "Japan National Tax Agency — official payroll tax guidance",
+      "sourceType": "GOVERNMENT",
+      "authorityLevel": 5,
+      "isFirstParty": true,
+      "isIndependent": true,
+      "commercialInterest": false,
+      "url": "https://www.nta.go.jp/",
+      "publishedDate": "2026-01-10",
+      "effectiveDate": "2026-01-10",
+      "lastVerified": "2026-09-18"
+    },
+    {
+      "id": "src-adp-jp",
+      "name": "ADP Japan product documentation",
+      "sourceType": "VENDOR_PRODUCT_DOCUMENTATION",
+      "authorityLevel": 4,
+      "isFirstParty": true,
+      "isIndependent": false,
+      "commercialInterest": true,
+      "url": "https://www.adp.com/jp/",
+      "publishedDate": "2026-06-15",
+      "lastVerified": "2026-09-19"
+    },
+    {
+      "id": "src-tmf-jp",
+      "name": "TMF Group Japan service documentation",
+      "sourceType": "VENDOR_PRODUCT_DOCUMENTATION",
+      "authorityLevel": 4,
+      "isFirstParty": true,
+      "isIndependent": false,
+      "commercialInterest": true,
+      "url": "https://www.tmf-group.com/en/location/asia/japan/",
+      "publishedDate": "2026-05-20",
+      "lastVerified": "2026-09-17"
+    },
+    {
+      "id": "src-independent-implementation",
+      "name": "Independent payroll implementation review — demo record",
+      "sourceType": "INDEPENDENT_RESEARCH",
+      "authorityLevel": 3,
+      "isFirstParty": false,
+      "isIndependent": true,
+      "commercialInterest": false,
+      "url": "https://example.com/demo-independent-review",
+      "publishedDate": "2026-08-10",
+      "lastVerified": "2026-09-16"
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim-jp-payroll-control",
+      "claimType": "MARKET_PRACTICE",
+      "text": "Japan payroll operations require a documented local payroll calendar and controlled monthly processing workflow.",
+      "subjectType": "PRACTICE",
+      "subjectId": "practice-jp-payroll",
+      "evidence": [
+        {"sourceId": "src-jp-mhlw", "stance": "supports", "directness": 4, "coverage": 4, "excerpt": "Demo extraction for workflow validation."},
+        {"sourceId": "src-independent-implementation", "stance": "supports", "directness": 3, "coverage": 3, "excerpt": "Independent demo implementation observation."}
+      ]
+    },
+    {
+      "id": "claim-jp-statutory-control",
+      "claimType": "REGULATION",
+      "text": "Payroll tax and statutory reporting obligations require locally verified operating controls.",
+      "subjectType": "REGULATION",
+      "subjectId": "reg-jp-statutory",
+      "evidence": [
+        {"sourceId": "src-jp-nta", "stance": "supports", "directness": 5, "coverage": 4, "excerpt": "Demo extraction referencing official tax guidance."}
+      ]
+    },
+    {
+      "id": "claim-jp-offcycle-control",
+      "claimType": "OPERATIONAL_REQUIREMENT",
+      "text": "High-complexity payroll scenarios need a controlled and auditable off-cycle process.",
+      "subjectType": "OPERATIONAL_REQUIREMENT",
+      "subjectId": "req-offcycle",
+      "evidence": [
+        {"sourceId": "src-jp-mhlw", "stance": "supports", "directness": 3, "coverage": 3, "excerpt": "Demo inference requiring human legal validation."}
+      ]
+    },
+    {
+      "id": "claim-retail-commission-control",
+      "claimType": "MARKET_PRACTICE",
+      "text": "Retail commission payroll requires explicit cut-off, exception and reconciliation controls.",
+      "subjectType": "PRACTICE",
+      "subjectId": "practice-retail-commission",
+      "evidence": [
+        {"sourceId": "src-independent-implementation", "stance": "supports", "directness": 4, "coverage": 3, "excerpt": "Demo operational observation; additional Japan-specific evidence is required."}
+      ]
+    },
+    {
+      "id": "claim-outsourcing-model",
+      "claimType": "MARKET_PRACTICE",
+      "text": "A small local HR team may require an accountable managed payroll operating layer.",
+      "subjectType": "OPERATIONAL_REQUIREMENT",
+      "subjectId": "req-managed",
+      "evidence": [
+        {"sourceId": "src-independent-implementation", "stance": "supports", "directness": 3, "coverage": 2, "excerpt": "Contextual demo evidence, not a universal market conclusion."}
+      ]
+    },
+    {
+      "id": "claim-adp-payroll",
+      "claimType": "VENDOR_CAPABILITY",
+      "text": "ADP Japan states that it provides payroll processing and payroll outsourcing services in Japan.",
+      "subjectType": "VENDOR_CAPABILITY",
+      "subjectId": "adp-jp-payroll",
+      "evidence": [
+        {"sourceId": "src-adp-jp", "stance": "supports", "directness": 5, "coverage": 4, "excerpt": "First-party product documentation supports the capability claim."},
+        {"sourceId": "src-independent-implementation", "stance": "supports", "directness": 2, "coverage": 2, "excerpt": "Independent demo corroboration with limited scope."}
+      ]
+    },
+    {
+      "id": "claim-tmf-payroll",
+      "claimType": "VENDOR_CAPABILITY",
+      "text": "TMF Group states that it provides payroll outsourcing and local compliance support in Japan.",
+      "subjectType": "VENDOR_CAPABILITY",
+      "subjectId": "tmf-jp-payroll",
+      "evidence": [
+        {"sourceId": "src-tmf-jp", "stance": "supports", "directness": 5, "coverage": 4, "excerpt": "First-party service documentation supports the capability claim."}
+      ]
+    }
+  ],
+  "practices": [
+    {"id": "practice-jp-payroll", "country": "JP", "name": "Local payroll calendar and monthly operating controls", "claimIds": ["claim-jp-payroll-control"]},
+    {"id": "practice-retail-commission", "country": "JP", "name": "Retail commission cut-off and exception controls", "claimIds": ["claim-retail-commission-control"]}
+  ],
+  "regulations": [
+    {"id": "reg-jp-statutory", "country": "JP", "name": "Payroll tax and statutory reporting controls", "claimIds": ["claim-jp-statutory-control"]}
+  ],
+  "vendors": [
+    {
+      "id": "vendor-adp-jp",
+      "name": "ADP Japan",
+      "capabilities": {
+        "Payroll Processing": {"status": "CONFIRMED", "claimIds": ["claim-adp-payroll"]},
+        "Payroll Outsourcing": {"status": "CONFIRMED", "claimIds": ["claim-adp-payroll"]},
+        "Statutory Reporting": {"status": "VENDOR_CLAIMED", "claimIds": ["claim-adp-payroll"]},
+        "Tax": {"status": "VENDOR_CLAIMED", "claimIds": ["claim-adp-payroll"]},
+        "Commission Management": {"status": "UNKNOWN", "claimIds": []},
+        "Local Team": {"status": "PARTIAL", "claimIds": ["claim-adp-payroll"]},
+        "Managed Service": {"status": "VENDOR_CLAIMED", "claimIds": ["claim-adp-payroll"]},
+        "API Integration": {"status": "UNKNOWN", "claimIds": []},
+        "Off-cycle Payroll": {"status": "UNKNOWN", "claimIds": []}
+      }
+    },
+    {
+      "id": "vendor-tmf-jp",
+      "name": "TMF Group",
+      "capabilities": {
+        "Payroll Processing": {"status": "VENDOR_CLAIMED", "claimIds": ["claim-tmf-payroll"]},
+        "Payroll Outsourcing": {"status": "CONFIRMED", "claimIds": ["claim-tmf-payroll"]},
+        "Statutory Reporting": {"status": "VENDOR_CLAIMED", "claimIds": ["claim-tmf-payroll"]},
+        "Tax": {"status": "VENDOR_CLAIMED", "claimIds": ["claim-tmf-payroll"]},
+        "Commission Management": {"status": "UNKNOWN", "claimIds": []},
+        "Local Team": {"status": "VENDOR_CLAIMED", "claimIds": ["claim-tmf-payroll"]},
+        "Managed Service": {"status": "CONFIRMED", "claimIds": ["claim-tmf-payroll"]},
+        "API Integration": {"status": "UNKNOWN", "claimIds": []},
+        "Off-cycle Payroll": {"status": "UNKNOWN", "claimIds": []}
+      }
+    },
+    {
+      "id": "vendor-hybrid",
+      "name": "Hybrid Internal + Managed Service",
+      "capabilities": {
+        "Payroll Processing": {"status": "PARTIAL", "claimIds": []},
+        "Payroll Outsourcing": {"status": "PARTIAL", "claimIds": []},
+        "Statutory Reporting": {"status": "UNKNOWN", "claimIds": []},
+        "Tax": {"status": "UNKNOWN", "claimIds": []},
+        "Commission Management": {"status": "PARTIAL", "claimIds": []},
+        "Local Team": {"status": "CONFIRMED", "claimIds": []},
+        "Managed Service": {"status": "PARTIAL", "claimIds": []},
+        "API Integration": {"status": "UNKNOWN", "claimIds": []},
+        "Off-cycle Payroll": {"status": "UNKNOWN", "claimIds": []}
+      }
+    }
+  ]
+}

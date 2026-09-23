@@ -272,6 +272,61 @@ const MARKET_SIGNALS = [
   { id: "managed-service", name: "区域化 Managed Service 覆盖扩大", type: "Regional Expansion / Coverage", markets: ["JP", "HK", "TW"], strength: "Building", direction: "Mixed", confidence: "Medium", first: "2026-08-25", evidence: 4, counter: 1, why: "供应商可能通过本地团队或合作伙伴扩大交付，但各市场服务边界并不一致。" },
 ];
 
+/* ---------------- V2 unified data + engine state ---------------- */
+
+let V2_DATA = null;
+let activeScenario = null;
+let activeVendorFit = null;
+
+async function loadV2Data() {
+  try {
+    const response = await fetch("data/v2-demo.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`V2 data HTTP ${response.status}`);
+    V2_DATA = await response.json();
+  } catch (error) {
+    console.error("V2 data could not be loaded", error);
+    V2_DATA = { meta: { disclaimer: "V2 数据加载失败。" }, sources: [], claims: [], practices: [], regulations: [], vendors: [] };
+  }
+}
+
+function evidenceStatus(status, qualityBand) {
+  const label = window.GPIEvidenceEngine?.STATUS_LABELS?.[status] || status;
+  const quality = qualityBand ? ` · ${qualityBand[0]}${qualityBand.slice(1).toLowerCase()} Evidence Quality` : "";
+  return `<span class="evidence-status status-${String(status).toLowerCase()}">${esc(label)}${esc(quality)}</span>`;
+}
+
+function evidenceSummary(assessment) {
+  return `${evidenceStatus(assessment.status, assessment.qualityBand)}
+    <div class="evidence-meta"><span><b>${assessment.independentSources}</b> Independent Sources</span><span><b>${assessment.tierOneSources}</b> Tier-1 Sources</span><span>Last Verified: <b>${esc(assessment.lastVerified || "—")}</b></span></div>`;
+}
+
+function openEvidenceDrawer(claimIds, title = "Why we believe this") {
+  if (!V2_DATA || !window.GPIEvidenceEngine) return;
+  const packets = window.GPIEvidenceEngine.evidencePacket(claimIds, V2_DATA);
+  document.getElementById("drawer-market").textContent = "EVIDENCE GRAPH";
+  document.getElementById("drawer-title").textContent = title;
+  document.getElementById("drawer-question").textContent = "展示可理解的 Evidence Basis，不展示模型内部推理。";
+  document.getElementById("drawer-body").innerHTML = packets.length ? packets.map(({ claim, assessment }) => `
+    <div class="drawer-section">
+      <h4>${esc(claim.claimType)} · ${esc(claim.subjectType)}</h4>
+      <p><b>${esc(claim.text)}</b></p>
+      ${evidenceSummary(assessment)}
+      <div class="evidence-dimensions">${Object.entries(assessment.dimensions).map(([name, value]) => `<div><b>${value}</b><span>${esc(name)}</span></div>`).join("")}</div>
+      <p class="note">Internal Evidence Quality Score: <b>${assessment.score}/100</b>. Score ≠ statistical probability.</p>
+      ${assessment.reasons.map((reason) => `<p class="note">${esc(reason)}</p>`).join("")}
+      <div>${assessment.items.map((item) => `<div class="source-card">
+        <p><b>${esc(item.source.name)}</b> ${stanceBadge(item.stance)}</p>
+        <div class="source-flags"><span>${esc(item.source.sourceType)}</span><span>${item.source.isFirstParty ? "First-party" : "Third-party"}</span><span>${item.source.isIndependent ? "Independent" : "Not independent"}</span><span>${item.source.commercialInterest ? "Commercial interest" : "No declared commercial interest"}</span></div>
+        <p>${esc(item.excerpt || "No excerpt")}</p>
+        <div class="evidence-meta"><span>Published: ${esc(item.source.publishedDate || "—")}</span><span>Effective: ${esc(item.source.effectiveDate || "—")}</span><span>Last Verified: ${esc(item.source.lastVerified || "—")}</span></div>
+        <a href="${esc(item.source.url)}" target="_blank" rel="noopener">Source ↗</a>
+      </div>`).join("")}</div>
+    </div>`).join("") : `<div class="empty-state">Insufficient Evidence：当前没有可追溯来源，系统不会自动补全。</div>`;
+  const drawer = document.getElementById("drawer");
+  drawer.classList.add("open");
+  drawer.setAttribute("aria-hidden", "false");
+}
+
 /* ---------------- 评分逻辑（移植自 server.py confidence_for） ---------------- */
 
 const TODAY = new Date("2026-09-23T00:00:00+08:00");
@@ -633,29 +688,37 @@ function renderDesignLibrary() {
 function renderScenarioSetup() {
   const options = MARKETS.map((m) => `<option value="${m.code}">${m.zh} · ${m.en}</option>`).join("");
   document.getElementById("scenario-market").innerHTML = options;
-  document.getElementById("scenario-results").innerHTML = `<div class="empty-state">填写左侧轻量 Context，生成 3 个不排序的可选情景。</div>`;
+  document.getElementById("scenario-market").value = "JP";
+  document.getElementById("scenario-results").innerHTML = `<div class="empty-state">填写 Context，系统将通过统一数据层生成 Practice、Regulation、Operational Requirements 和多个不排序选项。</div>`;
 }
 
 function scenarioSet(context) {
-  const market = marketName(context.market);
-  const goal = { growth: "Increase sales", balance: "Balance individual and team performance", simple: "Simplify administration" }[context.goal] || context.goal;
-  const choices = [
-    { name: "Option A · Simple individual structure", pattern: DESIGN_PATTERNS.find((p) => p.id === "fixed-rate"), complexity: "Low", volatility: "Medium–High", explain: "High", admin: "Low", trade: "个人激励直接，但协作与成本波动需要单独治理。" },
-    { name: "Option B · Individual + team balance", pattern: DESIGN_PATTERNS.find((p) => p.id === "individual-team"), complexity: "Medium", volatility: "Medium", explain: "Medium", admin: "Medium", trade: "兼顾个人和门店结果，但权重和例外处理更复杂。" },
-    { name: "Option C · Threshold and accelerator", pattern: DESIGN_PATTERNS.find((p) => p.id === "threshold-accelerator"), complexity: "High", volatility: "High", explain: "Medium", admin: "High", trade: "强化目标差异化，同时提高成本波动与目标设定风险。" },
-  ];
-  document.getElementById("scenario-results").innerHTML = choices.map((s, i) => `
-    <button class="scenario-card" data-scenario="${i}">
-      <div class="scenario-head"><span>OPTION ${String.fromCharCode(65 + i)}</span><b>${esc(s.name.replace(/^Option . · /, ""))}</b></div>
-      <p>${esc(s.pattern.structure)}</p>
-      <div class="scenario-stats"><span>复杂度 <b>${s.complexity}</b></span><span>成本波动 <b>${s.volatility}</b></span><span>可解释性 <b>${s.explain}</b></span><span>运营影响 <b>${s.admin}</b></span></div>
-      <small>${esc(s.trade)}</small>
-    </button>`).join("");
-  document.getElementById("scenario-evidence").innerHTML = `<div class="card-head"><h3>Evidence / Assumptions / Gaps</h3><span class="card-hint">${esc(market)}</span></div>
-    <div class="evidence-section"><b>输入 Context</b><p>${esc(context.industry)} · ${esc(context.workforce)} · ${esc(goal)}<br>当前：${esc(context.current)}<br>约束：${esc(context.constraints || "未提供")}</p></div>
-    <div class="evidence-section"><b>共同证据基础</b><p>使用 Design Library 中的 3 个销售激励结构；底层候选模式覆盖日本与香港，证据数仍有限。</p></div>
-    <div class="evidence-section"><b>关键假设</b><p>仅讨论结构，不包含内部成本、员工分布、法规、财务目标或系统限制。</p></div>
-    <div class="evidence-section gap"><b>Evidence gaps</b><p>${esc(market)} 的行业与企业规模证据需要补充；必须由 HR、Legal、Finance 和业务共同核验。</p></div>`;
+  if (!V2_DATA || !window.GPIScenarioEngine) {
+    document.getElementById("scenario-results").innerHTML = `<div class="empty-state">V2 数据尚未加载，请稍后重试。</div>`;
+    return;
+  }
+  activeScenario = window.GPIScenarioEngine.buildScenario(context, V2_DATA);
+  activeVendorFit = window.GPIVendorFitEngine.analyze(activeScenario, V2_DATA, window.GPIEvidenceEngine);
+  const market = marketName(context.country);
+  const allClaimIds = [...new Set(activeScenario.requirements.flatMap((item) => item.claimIds || []))];
+  document.getElementById("scenario-results").innerHTML = `
+    <div class="decision-banner"><b>${esc(market)} · ${esc(context.industry)} · ${esc(context.employeeCount)} employees</b><span>${esc(context.payrollFrequency)} payroll · Commission ${esc(context.commissionRequired)} · Local HR ${esc(context.localHrCapacity)}</span></div>
+    ${activeScenario.options.map((option, index) => `<article class="scenario-card" data-scenario="${index}">
+      <div class="scenario-head"><span>${index === 2 ? "HYBRID MODEL" : `OPTION ${String.fromCharCode(65 + index)}`}</span><b>${esc(option.name)}</b></div>
+      <div class="option-lists"><div><b>Strengths</b><ul>${option.strengths.map((item) => `<li>${esc(item)}</li>`).join("")}</ul></div><div><b>Gaps</b><ul>${option.gaps.map((item) => `<li>${esc(item)}</li>`).join("")}</ul></div><div><b>Trade-offs</b><ul>${option.tradeOffs.map((item) => `<li>${esc(item)}</li>`).join("")}</ul></div></div>
+    </article>`).join("")}
+    <div class="scenario-actions"><button class="btn btn-primary scenario-to-fit" type="button">带入 Vendor Fit 分析</button><button class="evidence-button" type="button" data-evidence-claims="${esc(allClaimIds.join(","))}">Why these requirements?</button></div>`;
+
+  document.getElementById("scenario-evidence").innerHTML = `<div class="card-head"><h3>Unified Decision Chain</h3><span class="card-hint">${esc(market)}</span></div>
+    <div class="graph-flow">
+      <div class="graph-node"><small>Scenario</small>${esc(context.industry)} · ${esc(context.employeeCount)} employees · ${esc(context.outsourcingPreference)} outsourcing</div>
+      <div class="graph-node"><small>Country Practice</small>${activeScenario.practices.map((item) => esc(item.name)).join(" · ") || "Insufficient evidence"}</div>
+      <div class="graph-node"><small>Regulation</small>${activeScenario.regulations.map((item) => esc(item.name)).join(" · ") || "Insufficient evidence"}</div>
+      <div class="graph-node"><small>Operational Requirements</small>${activeScenario.requirements.length} evidence-aware requirements</div>
+      <div class="graph-node"><small>Vendor Capability</small>Evaluated requirement by requirement; no total vendor ranking</div>
+    </div>
+    <div class="requirement-list">${activeScenario.requirements.map((item) => `<div class="requirement-row"><b>${esc(item.name)} · ${esc(item.criticality)}</b><span>${esc(item.rationale)}</span>${item.claimIds?.length ? `<button class="evidence-button" type="button" data-evidence-claims="${esc(item.claimIds.join(","))}">Why / Sources</button>` : `<span>${evidenceStatus("INSUFFICIENT", "LOW")}</span>`}</div>`).join("")}</div>
+    <div class="evidence-section gap"><b>Decision boundary</b><p>这些选项用于比较 Strength、Gap 与 Trade-off，不构成最佳 Vendor、法律意见或自动决策。</p></div>`;
 }
 
 /* ---------------- Phase 2：Vendor Fit ---------------- */
@@ -684,6 +747,22 @@ function analyzeVendorFit(requirement) {
     .flatMap((v) => selected.map((c) => ({ vendor: v, capability: c, status: fitStatus(v, requirement.market, c) })))
     .filter((x) => ["Unknown", "Partial Coverage", "Evidence Gap"].includes(x.status.label));
   document.getElementById("fit-rfi").innerHTML = `<div class="card-head"><h3>差异化 RFI Question Pack</h3><span class="card-hint">${gaps.length} 个待确认字段</span></div><div class="rfi-grid">${gaps.map((g) => `<div><b>${esc(g.vendor.name)} · ${esc(g.capability)}</b><p>${g.status.label === "Partial Coverage" ? "当前仅有供应商自述，请提供独立客户案例、实际服务范围与本地交付责任。" : g.status.label === "Evidence Gap" ? "公开信息存在冲突，请澄清当前能力、适用市场和证据日期。" : "当前没有足够公开信息，请确认是否提供该能力并附可验证来源。"}</p></div>`).join("") || `<div class="empty-state">所有必选字段均有可展开来源；仍需核验时效和适用范围。</div>`}</div>`;
+}
+
+function renderLinkedVendorFit() {
+  if (!activeScenario || !activeVendorFit) return;
+  const context = activeScenario.context;
+  document.getElementById("fit-scenario-context").innerHTML = `<b>Linked Scenario</b><br>${esc(marketName(context.country))} · ${esc(context.industry)} · ${esc(context.employeeCount)} employees · ${activeScenario.requirements.length} requirements`;
+  document.getElementById("fit-market").value = context.country;
+  const head = `<thead><tr><th>Vendor / Model</th>${activeScenario.requirements.map((item) => `<th>${esc(item.name)}<small>${esc(item.capability)}</small></th>`).join("")}</tr></thead>`;
+  const body = activeVendorFit.map(({ vendor, requirements }) => `<tr><td><b>${esc(vendor.name)}</b><small>No ranking / no total score</small></td>${requirements.map((result) => {
+    const claimIds = result.record?.claimIds || [];
+    return `<td><span class="fit-state fit-${result.status.toLowerCase()}">${esc(result.status.replaceAll("_", " "))}</span><span class="fit-detail">Evidence: ${esc(result.evidenceStatus)}</span>${claimIds.length ? `<button class="evidence-button" type="button" data-evidence-claims="${esc(claimIds.join(","))}">Why?</button>` : `<span class="fit-detail">No evidence; AI did not fill the gap.</span>`}</td>`;
+  }).join("")}</tr>`).join("");
+  document.getElementById("fit-table").innerHTML = head + `<tbody>${body}</tbody>`;
+
+  const gaps = activeVendorFit.flatMap(({ vendor, requirements }) => requirements.filter((result) => result.status !== "FIT").map((result) => ({ vendor, result })));
+  document.getElementById("fit-rfi").innerHTML = `<div class="card-head"><h3>Evidence-aware RFI Question Pack</h3><span class="card-hint">${gaps.length} 个待验证要求</span></div><div class="rfi-grid">${gaps.map(({ vendor, result }) => `<div><b>${esc(vendor.name)} · ${esc(result.requirement.name)}</b><p>${result.status === "PARTIAL_FIT" ? "当前能力有支持证据，但独立验证或适用范围不足。请提供日本客户案例、责任边界和当前产品文档。" : result.status === "GAP" ? "当前记录显示能力缺口，请说明替代流程、合作伙伴安排和责任主体。" : "当前没有足够证据。请确认是否支持，并提供可验证来源、有效日期及适用范围。"}</p></div>`).join("")}</div><p class="note">FIT / PARTIAL FIT / GAP / UNKNOWN 描述需求覆盖证据，不代表供应商推荐。</p>`;
 }
 
 /* ---------------- Phase 2：Market Signals ---------------- */
@@ -810,36 +889,45 @@ function renderChanges() {
 /* ---------------- Ask Intelligence ---------------- */
 
 function renderAsk() {
-  const suggest = verifiedPractice().map((p) => p.category);
+  const suggest = ["Japan payroll requirements", "Japan retail commission evidence", "ADP Japan payroll capability", ...verifiedPractice().map((p) => p.category)].slice(0, 8);
   document.getElementById("ask-suggest").innerHTML =
     suggest.map((s) => `<button class="filter-chip" type="button" data-q="${esc(s)}">${esc(s)}</button>`).join("");
 }
 
 function ask(query) {
   const term = (query || "").trim().slice(0, 100);
-  const verified = verifiedPractice();
-  const match = (p) => {
-    const hay = [p.claim, p.category, marketName(p.market), p.domain].join(" ").toLowerCase();
-    return term.split(/\s+/).filter((t) => t.length > 1).every((t) => hay.includes(t.toLowerCase()));
-  };
-  const results = term ? verified.filter(match).slice(0, 5) : [];
   const host = document.getElementById("ask-results");
-
   if (!term) {
-    host.innerHTML = `<div class="ask-note">输入关键词开始检索。仅返回<b>已验证（Verified）</b>记录。</div>`;
+    host.innerHTML = `<div class="ask-note">输入问题后，系统先检索 Entity 与 Evidence，再根据 Evidence Status 生成回答。</div>`;
     return;
   }
+
+  if (!V2_DATA || !window.GPIEvidenceEngine) {
+    host.innerHTML = `<div class="ask-note">Evidence Graph 尚未加载，不能生成回答。</div>`;
+    return;
+  }
+
+  const tokens = term.toLowerCase().split(/\s+/).filter((token) => token.length > 1);
+  const sourceById = new Map(V2_DATA.sources.map((source) => [source.id, source]));
+  const results = V2_DATA.claims.map((claim) => {
+    const sources = (claim.evidence || []).map((item) => sourceById.get(item.sourceId)).filter(Boolean);
+    const haystack = [claim.text, claim.claimType, claim.subjectType, ...sources.map((source) => source.name)].join(" ").toLowerCase();
+    const score = tokens.reduce((total, token) => total + (haystack.includes(token) ? 1 : 0), 0);
+    return { claim, sources, score, assessment: window.GPIEvidenceEngine.assessClaim(claim, V2_DATA) };
+  }).filter((result) => result.score > 0).sort((a, b) => b.score - a.score).slice(0, 5);
+
   if (!results.length) {
-    host.innerHTML = `<div class="ask-note">没有检索到足够证据支撑的回答。<br>Ask Intelligence 仅检索已验证的内部记录；当前没有证据时拒绝猜测，不伪装成已接入大模型或外部研究。</div>`;
+    host.innerHTML = `<div class="ask-note">${evidenceStatus("INSUFFICIENT", "LOW")}<br>Evidence Graph 中没有足够信息回答该问题。系统没有猜测，也没有使用未记录的外部知识。</div>`;
     return;
   }
-  host.innerHTML = `<div class="ask-note">以下是已核验记录，请展开查看原始证据与适用范围。</div>` +
-    results.map((p) => `
-    <div class="ask-result">
-      <h4>${marketDot(p.market)} ${marketName(p.market)} · ${esc(p.category)} ${badge("Verified")}</h4>
-      <p>${esc(p.claim)}</p>
-      <div class="ask-foot"><span>可信度：<b>${p.confidence}</b> / 100</span><span>证据 ${p.evidence.length} 条</span><span>发布于 ${esc(p.claimDate || "—")}</span></div>
-    </div>`).join("");
+
+  host.innerHTML = `<div class="ask-note">回答来自当前 Evidence Graph。Conflicting、Stale 或 Insufficient 状态不会被隐藏。</div>` + results.map(({ claim, assessment }) => `
+    <article class="ask-result">
+      <h4>${esc(claim.claimType)} · ${esc(claim.subjectType)}</h4>
+      <p>${esc(claim.text)}</p>
+      ${evidenceSummary(assessment)}
+      <div class="answer-basis"><b>Evidence Basis</b><p>${esc(assessment.reasons.join(" "))}</p><button class="evidence-button" type="button" data-evidence-claims="${esc(claim.id)}">Why this answer?</button></div>
+    </article>`).join("");
 }
 
 /* ---------------- 方法论 ---------------- */
@@ -855,6 +943,10 @@ function renderMethod() {
     <div class="tier-row">${tierBadge(t.tier)}<p><b>${esc(t.label)}</b> — ${esc(t.desc)}</p></div>`).join("");
 
   document.getElementById("boundary-list").innerHTML = BOUNDARIES.map((b) => `<li>${esc(b)}</li>`).join("");
+  document.getElementById("method-v2").innerHTML = `<div class="card-head"><h3>V2 Evidence Governance</h3><span class="card-hint">Source Authority × Claim Type</span></div>
+    <div class="design-columns"><div><b>Evidence Quality</b><ul><li>Authority</li><li>Independence</li><li>Recency</li><li>Directness</li><li>Coverage</li></ul></div><div><b>Evidence Status</b><ul><li>VERIFIED</li><li>SUPPORTED</li><li>CONFLICTING</li><li>INSUFFICIENT</li><li>STALE</li></ul></div></div>
+    <p class="note">Vendor 官方产品文档可以高权威地支持“该 Vendor 声称具备某项能力”，但不能独立支持“该 Vendor 是市场最佳选择”。商业利益、独立性和 Claim Type 会共同影响评估。</p>
+    <p class="note"><b>Evidence Score ≠ Statistical Probability · Verified ≠ Absolute Truth · AI Generated Insight ≠ Legal Advice · Vendor Fit ≠ Vendor Recommendation · Decision Insight ≠ Automated Decision.</b></p>`;
 }
 
 /* ---------------- 详情抽屉 ---------------- */
@@ -904,6 +996,17 @@ function openPracticeDetail(market, category) {
 /* ---------------- 事件绑定与初始化 ---------------- */
 
 document.addEventListener("click", (e) => {
+  const evidenceTrigger = e.target.closest("[data-evidence-claims]");
+  if (evidenceTrigger) {
+    openEvidenceDrawer(evidenceTrigger.dataset.evidenceClaims.split(",").filter(Boolean));
+    return;
+  }
+  const scenarioToFit = e.target.closest(".scenario-to-fit");
+  if (scenarioToFit) {
+    switchView("vendorfit");
+    renderLinkedVendorFit();
+    return;
+  }
   const nav = e.target.closest(".nav-item");
   if (nav) { switchView(nav.dataset.view); return; }
 
@@ -947,10 +1050,10 @@ document.addEventListener("click", (e) => {
     document.querySelectorAll(".scenario-card").forEach((card) => card.classList.remove("selected"));
     scenario.classList.add("selected");
     const index = Number(scenario.dataset.scenario);
-    const names = ["简单个人结构", "个人与团队平衡", "门槛与加速器"];
+    const names = activeScenario?.options?.map((option) => option.name) || ["Option A", "Option B", "Hybrid Model"];
     const rail = document.getElementById("scenario-evidence");
     rail.querySelectorAll(".selected-option").forEach((item) => item.remove());
-    rail.insertAdjacentHTML("beforeend", `<div class="evidence-section selected-option"><b>当前查看</b><p>${esc(names[index])}。这是用于比较的可选结构，不代表平台推荐。</p></div>`);
+    rail.insertAdjacentHTML("beforeend", `<div class="evidence-section selected-option"><b>当前查看</b><p>${esc(names[index] || "Option")}。这是用于比较的可选结构，不代表平台推荐。</p></div>`);
     return;
   }
 
@@ -1042,7 +1145,8 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-function init() {
+async function init() {
+  await loadV2Data();
   practices = buildPractices();
   renderPracticeFilters();
   renderOverview();

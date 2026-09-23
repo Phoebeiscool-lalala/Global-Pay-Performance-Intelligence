@@ -11,6 +11,10 @@ for (const file of ["index.html", "styles.css", "app.js"]) {
   await cp(resolve(root, file), resolve(output, file));
 }
 
+for (const directory of ["data", "engines"]) {
+  await cp(resolve(root, directory), resolve(output, directory), { recursive: true });
+}
+
 await mkdir(resolve(output, ".openai"), { recursive: true });
 await cp(
   resolve(root, ".openai", "hosting.json"),

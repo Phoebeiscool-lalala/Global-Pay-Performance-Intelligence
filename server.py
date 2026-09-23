@@ -11,15 +11,21 @@ import os
 import re
 import sqlite3
 from contextlib import contextmanager
+from dataclasses import asdict
 from datetime import date, datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from models import ScenarioContext
+from services.scenario_engine import build_options, build_requirements
+from services.vendor_fit_engine import match_vendor
+
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ.get("GPI_DB_PATH", ROOT / "intelligence.sqlite3"))
 STATIC = ROOT
+V2_DATA_PATH = ROOT / "data" / "v2-demo.json"
 MARKETS = [
     ("JP", "日本", "Japan"),
     ("KR", "韩国", "South Korea"),
@@ -174,18 +180,119 @@ def initialize() -> None:
                 CHECK(relation IN ('supports','counter')),
             PRIMARY KEY(signal_id, evidence_id, relation)
         );
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS regions (
+            id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE
+        );
+        CREATE TABLE IF NOT EXISTS countries (
+            code TEXT PRIMARY KEY REFERENCES markets(code), region_id TEXT NOT NULL REFERENCES regions(id),
+            name TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS sources (
+            id TEXT PRIMARY KEY, name TEXT NOT NULL, source_type TEXT NOT NULL,
+            authority_level INTEGER NOT NULL CHECK(authority_level BETWEEN 0 AND 5),
+            is_first_party INTEGER NOT NULL DEFAULT 0, is_independent INTEGER NOT NULL DEFAULT 0,
+            commercial_interest INTEGER NOT NULL DEFAULT 0, publisher TEXT NOT NULL DEFAULT '',
+            url TEXT NOT NULL, published_date TEXT, effective_date TEXT, last_verified TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS claims (
+            id TEXT PRIMARY KEY, claim_type TEXT NOT NULL, claim_text TEXT NOT NULL,
+            subject_type TEXT NOT NULL, subject_id TEXT NOT NULL,
+            verification_status TEXT NOT NULL DEFAULT 'INSUFFICIENT'
+                CHECK(verification_status IN ('VERIFIED','SUPPORTED','CONFLICTING','INSUFFICIENT','STALE')),
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS facts (
+            id TEXT PRIMARY KEY, claim_id TEXT NOT NULL REFERENCES claims(id), normalized_fact TEXT NOT NULL,
+            country_code TEXT REFERENCES countries(code), effective_date TEXT, valid_to TEXT,
+            review_status TEXT NOT NULL DEFAULT 'DRAFT'
+        );
+        CREATE TABLE IF NOT EXISTS claim_evidence (
+            claim_id TEXT NOT NULL REFERENCES claims(id), source_id TEXT NOT NULL REFERENCES sources(id),
+            stance TEXT NOT NULL CHECK(stance IN ('supports','contradicts','context')),
+            excerpt TEXT NOT NULL DEFAULT '', directness INTEGER NOT NULL DEFAULT 0 CHECK(directness BETWEEN 0 AND 5),
+            coverage INTEGER NOT NULL DEFAULT 0 CHECK(coverage BETWEEN 0 AND 5),
+            PRIMARY KEY(claim_id, source_id, stance)
+        );
+        CREATE TABLE IF NOT EXISTS regulations (
+            id TEXT PRIMARY KEY, country_code TEXT NOT NULL REFERENCES countries(code), name TEXT NOT NULL,
+            effective_date TEXT, status TEXT NOT NULL DEFAULT 'ACTIVE', claim_id TEXT REFERENCES claims(id)
+        );
+        CREATE TABLE IF NOT EXISTS operational_requirements (
+            id TEXT PRIMARY KEY, country_code TEXT REFERENCES countries(code), name TEXT NOT NULL,
+            capability TEXT NOT NULL, rationale TEXT NOT NULL DEFAULT '', criticality TEXT NOT NULL DEFAULT 'IMPORTANT',
+            evidence_status TEXT NOT NULL DEFAULT 'INSUFFICIENT'
+                CHECK(evidence_status IN ('VERIFIED','SUPPORTED','CONFLICTING','INSUFFICIENT','STALE'))
+        );
+        CREATE TABLE IF NOT EXISTS practice_requirements (
+            practice_id INTEGER NOT NULL REFERENCES practices(id),
+            requirement_id TEXT NOT NULL REFERENCES operational_requirements(id),
+            PRIMARY KEY(practice_id, requirement_id)
+        );
+        CREATE TABLE IF NOT EXISTS vendor_capability_evidence (
+            vendor_id INTEGER NOT NULL REFERENCES vendors(id), market TEXT NOT NULL REFERENCES markets(code),
+            capability TEXT NOT NULL, claim_id TEXT NOT NULL REFERENCES claims(id),
+            PRIMARY KEY(vendor_id, market, capability, claim_id)
+        );
+        CREATE TABLE IF NOT EXISTS scenario_requirements (
+            scenario_id INTEGER NOT NULL REFERENCES scenarios(id),
+            requirement_id TEXT NOT NULL REFERENCES operational_requirements(id),
+            PRIMARY KEY(scenario_id, requirement_id)
+        );
+        CREATE TABLE IF NOT EXISTS decision_insights (
+            id TEXT PRIMARY KEY, scenario_id INTEGER REFERENCES scenarios(id), insight_type TEXT NOT NULL,
+            insight_text TEXT NOT NULL, evidence_status TEXT NOT NULL DEFAULT 'INSUFFICIENT',
+            human_review_status TEXT NOT NULL DEFAULT 'PENDING', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS entity_relationships (
+            id INTEGER PRIMARY KEY, from_type TEXT NOT NULL, from_id TEXT NOT NULL,
+            relation_type TEXT NOT NULL, to_type TEXT NOT NULL, to_id TEXT NOT NULL,
+            claim_id TEXT REFERENCES claims(id), created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(from_type, from_id, relation_type, to_type, to_id, claim_id)
+        );
+        CREATE TABLE IF NOT EXISTS source_snapshots (
+            id INTEGER PRIMARY KEY, source_id TEXT NOT NULL REFERENCES sources(id), content_hash TEXT NOT NULL,
+            captured_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, content_excerpt TEXT NOT NULL DEFAULT '',
+            UNIQUE(source_id, content_hash)
+        );
+        CREATE TABLE IF NOT EXISTS change_events (
+            id INTEGER PRIMARY KEY, source_id TEXT NOT NULL REFERENCES sources(id), old_snapshot_id INTEGER REFERENCES source_snapshots(id),
+            new_snapshot_id INTEGER NOT NULL REFERENCES source_snapshots(id), change_type TEXT NOT NULL,
+            summary TEXT NOT NULL, verification_status TEXT NOT NULL DEFAULT 'PENDING',
+            detected_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS affected_entities (
+            change_event_id INTEGER NOT NULL REFERENCES change_events(id), entity_type TEXT NOT NULL,
+            entity_id TEXT NOT NULL, impact TEXT NOT NULL, review_status TEXT NOT NULL DEFAULT 'PENDING',
+            PRIMARY KEY(change_event_id, entity_type, entity_id)
+        );
         CREATE INDEX IF NOT EXISTS idx_practice_market ON practices(market, domain);
         CREATE INDEX IF NOT EXISTS idx_evidence_practice ON evidence(practice_id);
         CREATE INDEX IF NOT EXISTS idx_pattern_domain ON regional_patterns(domain, status);
         CREATE INDEX IF NOT EXISTS idx_vendor_fit_requirement ON vendor_fit_records(requirement_id);
         CREATE INDEX IF NOT EXISTS idx_signal_strength ON market_signals(signal_strength, direction);
+        CREATE INDEX IF NOT EXISTS idx_claim_subject ON claims(subject_type, subject_id);
+        CREATE INDEX IF NOT EXISTS idx_claim_status ON claims(verification_status, claim_type);
+        CREATE INDEX IF NOT EXISTS idx_claim_evidence_claim ON claim_evidence(claim_id, stance);
+        CREATE INDEX IF NOT EXISTS idx_requirement_country ON operational_requirements(country_code, capability);
+        CREATE INDEX IF NOT EXISTS idx_relationship_from ON entity_relationships(from_type, from_id);
+        CREATE INDEX IF NOT EXISTS idx_relationship_to ON entity_relationships(to_type, to_id);
+        CREATE INDEX IF NOT EXISTS idx_change_source ON change_events(source_id, detected_at);
         """)
         connection.executemany("INSERT OR IGNORE INTO markets VALUES (?,?,?)", MARKETS)
+        connection.execute("INSERT OR IGNORE INTO regions(id,name) VALUES ('east-asia','East Asia')")
+        connection.executemany("INSERT OR IGNORE INTO countries(code,region_id,name) VALUES (?,?,?)",
+                               [(code, "east-asia", name_en) for code, _, name_en in MARKETS])
+        connection.execute("INSERT OR IGNORE INTO schema_migrations(version,name) VALUES (2,'V2 evidence graph foundation')")
         connection.executemany(
             "INSERT OR IGNORE INTO practices(market,domain,category,question) VALUES (?,?,?,?)",
             [(market, domain, category, question)
              for market, _, _ in MARKETS for domain, category, question in TOPICS],
         )
+        connection.execute("PRAGMA optimize")
 
 
 def rows(cursor: sqlite3.Cursor) -> list[dict]:
@@ -264,6 +371,38 @@ def data_readiness(connection: sqlite3.Connection) -> dict:
             "gates": gates, "unknown_discipline": "Missing values remain Unknown; no AI imputation."}
 
 
+def v2_demo_data() -> dict:
+    return json.loads(V2_DATA_PATH.read_text(encoding="utf-8"))
+
+
+def japan_retail_demo() -> dict:
+    data = v2_demo_data()
+    context = ScenarioContext(
+        country="JP", employee_count=300, industry="Retail", payroll_frequency="Monthly",
+        payroll_complexity="Medium", commission_required=True, local_hr_capacity=2,
+        outsourcing_preference="Preferred", reporting_requirement="Local statutory + regional",
+        integration_requirement="HRIS + Finance", compliance_complexity="High",
+    )
+    requirements = build_requirements(context)
+    vendor_results = [
+        {"vendor": vendor["name"], "requirements": [asdict(item) for item in match_vendor(requirements, vendor)]}
+        for vendor in data["vendors"]
+    ]
+    return {
+        "context": asdict(context),
+        "practices": [item for item in data["practices"] if item["country"] == context.country],
+        "regulations": [item for item in data["regulations"] if item["country"] == context.country],
+        "requirements": [asdict(item) for item in requirements],
+        "options": build_options(context, requirements),
+        "vendor_fit": vendor_results,
+        "guardrails": [
+            "No vendor ranking or total score.",
+            "Unknown remains Unknown when evidence is missing.",
+            "Decision support only; human review is required.",
+        ],
+    }
+
+
 def validate_url(value: str) -> tuple[str, str]:
     parsed = urlparse(value)
     if parsed.scheme not in ("https", "http") or not parsed.hostname or parsed.username or parsed.password:
@@ -300,6 +439,16 @@ class Handler(BaseHTTPRequestHandler):
                         "CompanyArchetype", "RegionalPattern", "DesignPattern", "ContextProfile", "Scenario",
                         "RequirementProfile", "VendorFitRecord", "RFIQuestion", "MarketSignal", "PracticeEvolution"
                     ], "guardrail": "Decision support only; final HR decisions remain human-owned."})
+                if path == "/api/v2/schema":
+                    return self.send_json({
+                        "chain": ["Source", "Claim", "Fact", "Practice", "OperationalRequirement",
+                                  "VendorCapability", "Scenario", "DecisionInsight"],
+                        "evidence_status": ["VERIFIED", "SUPPORTED", "CONFLICTING", "INSUFFICIENT", "STALE"],
+                        "fit_status": ["FIT", "PARTIAL_FIT", "GAP", "UNKNOWN"],
+                        "source_reliability": "Source Authority × Claim Type × Independence × Commercial Interest",
+                    })
+                if path == "/api/v2/demo/japan-retail":
+                    return self.send_json(japan_retail_demo())
                 if path == "/api/practices":
                     return self.send_json(practice_list(connection, query.get("market", [""])[0], query.get("domain", [""])[0]))
                 if re.fullmatch(r"/api/practices/\d+", path):
@@ -341,10 +490,15 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send_json({"query": term, "results": matched,
                         "message": "仅检索已核验的内部情报；当前没有足够证据回答。" if not matched else
                                    "以下是已核验记录，请展开查看原始证据与适用范围。"})
-            if path == "/" or path in ("/index.html", "/app.js", "/styles.css"):
+            if path == "/" or path.startswith(("/index.html", "/app.js", "/styles.css", "/data/", "/engines/")):
                 name = "index.html" if path == "/" else path.lstrip("/")
-                content = (STATIC / name).read_bytes()
-                mime = "text/html" if name.endswith("html") else "text/css" if name.endswith("css") else "text/javascript"
+                target = (STATIC / name).resolve()
+                if STATIC.resolve() not in target.parents and target != STATIC.resolve():
+                    return self.send_json({"error": "Not found"}, 404)
+                if not target.is_file() or target.suffix not in {".html", ".css", ".js", ".json"}:
+                    return self.send_json({"error": "Not found"}, 404)
+                content = target.read_bytes()
+                mime = {".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".json": "application/json"}[target.suffix]
                 self.send_response(200)
                 self.send_header("Content-Type", mime + "; charset=utf-8")
                 self.send_header("Content-Length", str(len(content)))
