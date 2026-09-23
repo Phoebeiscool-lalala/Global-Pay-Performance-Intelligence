@@ -1,49 +1,52 @@
-# Global Pay & Performance Intelligence
+# Global Pay & Performance Decision Intelligence
 
-依据 `Global_Pay_Performance_Intelligence_PRD_V0.1.docx` 构建的本地 MVP 工作台。覆盖日本、韩国、中国香港和中国台湾，围绕 Practice Intelligence、Vendor Intelligence、Market Intelligence 三个模块组织可追溯情报。
+依据 `Global_Pay_Performance_Decision_Intelligence_Phase2_PRD_V0.2.docx` 继续设计的 Phase 2 原型。产品从 Phase 1 的外部情报检索，扩展为可解释的跨市场比较、模式识别、设计选项、Scenario Lab、需求驱动的 Vendor Fit 和市场信号。
 
-## 运行
+## 本地运行
 
-需要 Python 3.10+，无需安装第三方依赖。
+需要 Python 3.10+，无第三方依赖：
 
 ```powershell
 python server.py
 ```
 
-浏览器打开 `http://127.0.0.1:8765`。首次启动会自动在项目目录创建 `intelligence.sqlite3`；可通过环境变量 `GPI_DB_PATH` 指定数据库位置、通过 `PORT` 更改端口。服务只监听本机回环地址，不应直接暴露到互联网。
+打开 `http://127.0.0.1:8765`。服务只监听本机；首次运行自动创建 `intelligence.sqlite3`。也可以直接通过静态服务器打开 `index.html`、`styles.css` 和 `app.js`。
 
-运行测试：
+运行验证：
 
 ```powershell
 python -m unittest discover -s tests -v
+node --check app.js
 ```
 
-## 已实现
+## Phase 2 已实现
 
-- 四市场首页、PRD 对应的 Pay / Performance / Pay-for-Performance 研究分类和市场对比矩阵。
-- Practice 记录以研究问题开始，默认 `Research candidate`，并非事实结论。可以录入公开来源的链接、机构、Tier、方向、原文摘录、发布日期和适用人群。
-- 透明的辅助可信度评分：来源质量 30%、独立来源数 25%、一致性 20%、时效性 15%、适用范围 10%。仅 Tier 1–3 可以支持市场实践；Tier 4 Vendor 内容与 Tier 5 未核验内容不能单独建立市场结论。缺少发布日期不给时效分。单一来源不能达发布门槛；冲突证据强制标记。达到门槛后，仍需研究员人工审核和发布结论。
-- 结论变更保留旧结论、新结论、原因、评分及日期；市场变化页只展示已发布的版本历史。
-- Vendor 档案、逐市场能力状态和来源、2–5 家能力矩阵，以及针对 Unknown / Vendor Claimed / Conflicting 字段的 RFI 问题包。
-- Ask Intelligence 仅检索 `Verified` 内部记录；没有证据时拒绝猜测，不伪装成已接入大模型或外部研究。
-- SQLite 持久化和只监听本机的 JSON API；界面适配桌面和移动设备。
+- Regional Intelligence：四市场矩阵、底层 Claim 状态、可信度、Common Practice、Market Difference 与 Evidence Gap。
+- Company Archetype 数据结构：公司来源、规模、行业、Workforce 和 Operating Model；无法判断时保留 `Unknown`。
+- Pattern Explorer：模式范围、组成、市场、Company Archetype、支持与反向证据、限制、状态及核验日期。
+- Practice Design Library：绩效和销售激励结构、Potential Advantages、Trade-offs、Operational Complexity、Evidence 与 Limitation。
+- Scenario Lab：输入轻量业务 Context，生成三个不排序的可选结构，明确展示证据、假设与缺口；不输出“推荐”或“最佳方案”。
+- Vendor Fit：Requirement Builder、逐字段 Capability Coverage Matrix，以及针对 Partial / Unknown / Evidence Gap 的差异化 RFI 问题包；不计算供应商总分。
+- Market Signals：Signal Strength、Direction、Supporting Evidence、Counter Signals、Confidence 与 Why It Matters。
+- Phase 2 后端数据模型：`CompanyArchetype`、`RegionalPattern`、`DesignPattern`、`ContextProfile`、`Scenario`、`RequirementProfile`、`VendorFitRecord`、`RFIQuestion` 和 `MarketSignal`。
+- Data Readiness Gate API：`/api/phase2/readiness`；在 Phase 1 覆盖、可追溯性、多来源验证与 Vendor Coverage 不达标时，明确阻止把 Phase 2 当作自动化结论层。
 
-## 数据与产品边界
+## 证据与决策边界
 
-首次运行仅写入 4 个市场 × 8 个研究主题，共 32 个**待研究主题**。不预装未经证实的薪酬、绩效或供应商结论，不把营销内容当独立证据，不提供 P25/P50/P75 薪资基准、法律建议、个人薪酬决策、Payroll 计算或员工绩效评定。当前评分是 PRD 权重的可解释原型，不等于已验证的统计概率，也不自动判断来源是否真正独立。研究人员需审阅来源、适用市场、人群、日期和潜在偏差。
+平台中的市场实践、供应商和 Phase 2 结果均为演示数据，不代表真实研究结论。Regional Pattern 必须回溯到底层 Claim 与 Source；Scenario 必须显示 Evidence、Assumptions、Trade-offs 和 Gaps；Vendor Fit 必须区分 Confirmed、Partial、Unknown、Capability Gap 和 Evidence Gap；Signal 必须同时保留 Supporting Evidence 与 Counter Signals。
 
-当前是本地研究原型：尚未实现认证、权限、审计日志、自动爬取、定时监测、外部 AI Agent、版权许可管理、通知和生产部署。生产化之前必须增加这些控制，并将研究数据与公开访问界面隔离。
+平台不替用户制定薪酬或绩效政策，不对 Vendor 自动评分或选型，不使用外部市场信息做员工个人决策，不上传员工级薪酬或绩效数据，也不把 Company Archetype 当作企业必然相同的依据。最终判断归 HR、Legal、Finance、采购和业务负责人。
 
 ## 代码结构
 
 ```text
-server.py             SQLite schema、证据规则、JSON API、本地静态服务
-static/index.html     工作台结构与导航
-static/styles.css     响应式设计系统
-static/app.js         页面交互、对比、证据录入和 RFI
-tests/test_api.py     证据发布、冲突与供应商边界测试
+index.html            Phase 1 + Phase 2 工作台页面
+styles.css            响应式界面与决策支持组件
+app.js                演示数据、证据逻辑和交互流程
+server.py             SQLite 数据模型、本地服务、Phase 1 API 与 Data Readiness Gate
+tests/test_phase2.py  Phase 2 schema、静态入口和护栏验证
 ```
 
-## 下一阶段
+## 下一步生产化
 
-按照 PRD Phase 0/1，先建立日本试点的 Source Registry、Practice Coverage 和 Vendor Seed List，经合法公开来源逐条采证；随后增加审核角色与审计日志、明确的独立性判定、来源快照和重核验队列。东亚扩展、AI Research Agent、持续监控与告警在验证试点数据质量后推进。
+在接入自动 Pattern Mining、Scenario Builder 或 Signal Detection 之前，应先满足 PRD 的 Data Readiness Gate，并增加身份认证、角色权限、审核流、审计日志、来源快照、版权管理、持久化 API、Prompt/Agent 版本控制和人工评估框架。

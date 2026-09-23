@@ -1,4 +1,4 @@
-"""Local evidence-first prototype for Global Pay & Performance Intelligence.
+"""Local evidence-first prototype for Global Pay & Performance Decision Intelligence.
 
 No external research, LLM, scheduler, or authentication is implied by this server.
 Bind only to loopback until those production controls exist.
@@ -19,7 +19,7 @@ from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ.get("GPI_DB_PATH", ROOT / "intelligence.sqlite3"))
-STATIC = ROOT / "static"
+STATIC = ROOT
 MARKETS = [
     ("JP", "日本", "Japan"),
     ("KR", "韩国", "South Korea"),
@@ -99,8 +99,86 @@ def initialize() -> None:
             old_confidence INTEGER NOT NULL, new_confidence INTEGER NOT NULL,
             reason TEXT NOT NULL, changed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS company_archetypes (
+            id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE,
+            company_origin TEXT NOT NULL DEFAULT 'Unknown', company_size TEXT NOT NULL DEFAULT 'Unknown',
+            industry TEXT NOT NULL DEFAULT 'Unknown', workforce TEXT NOT NULL DEFAULT 'Unknown',
+            operating_model TEXT NOT NULL DEFAULT 'Unknown', evidence_context TEXT NOT NULL DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS regional_patterns (
+            id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, domain TEXT NOT NULL,
+            scope TEXT NOT NULL, observed_components TEXT NOT NULL DEFAULT '[]',
+            markets_observed TEXT NOT NULL DEFAULT '[]', archetypes_observed TEXT NOT NULL DEFAULT '[]',
+            counter_evidence TEXT NOT NULL DEFAULT '', limitations TEXT NOT NULL DEFAULT '',
+            confidence TEXT NOT NULL CHECK(confidence IN ('High','Medium','Low')),
+            status TEXT NOT NULL CHECK(status IN ('Emerging','Established','Weakening','Conflicting')),
+            first_detected TEXT NOT NULL, last_verified TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS regional_pattern_claims (
+            pattern_id INTEGER NOT NULL REFERENCES regional_patterns(id),
+            practice_id INTEGER NOT NULL REFERENCES practices(id), relation TEXT NOT NULL
+                CHECK(relation IN ('supports','contradicts','context')),
+            PRIMARY KEY(pattern_id, practice_id, relation)
+        );
+        CREATE TABLE IF NOT EXISTS design_patterns (
+            id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, pattern_type TEXT NOT NULL,
+            structure TEXT NOT NULL, observed_markets TEXT NOT NULL DEFAULT '[]',
+            observed_archetypes TEXT NOT NULL DEFAULT '[]', potential_advantages TEXT NOT NULL DEFAULT '[]',
+            trade_offs TEXT NOT NULL DEFAULT '[]', operational_complexity TEXT NOT NULL,
+            limitations TEXT NOT NULL DEFAULT '', evidence_refs TEXT NOT NULL DEFAULT '[]'
+        );
+        CREATE TABLE IF NOT EXISTS context_profiles (
+            id INTEGER PRIMARY KEY, country TEXT NOT NULL, industry TEXT NOT NULL DEFAULT 'Unknown',
+            employee_scale TEXT NOT NULL DEFAULT 'Unknown', workforce TEXT NOT NULL DEFAULT 'Unknown',
+            current_model TEXT NOT NULL DEFAULT '', pain_point TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS scenarios (
+            id INTEGER PRIMARY KEY, context_id INTEGER NOT NULL REFERENCES context_profiles(id),
+            name TEXT NOT NULL, design_structure TEXT NOT NULL, evidence_refs TEXT NOT NULL DEFAULT '[]',
+            assumptions TEXT NOT NULL DEFAULT '[]', operational_complexity TEXT NOT NULL,
+            cost_volatility TEXT NOT NULL, explainability TEXT NOT NULL,
+            administration_impact TEXT NOT NULL, trade_offs TEXT NOT NULL DEFAULT '[]',
+            evidence_gaps TEXT NOT NULL DEFAULT '[]', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS requirement_profiles (
+            id INTEGER PRIMARY KEY, name TEXT NOT NULL, markets TEXT NOT NULL DEFAULT '[]',
+            employee_scale TEXT NOT NULL DEFAULT 'Unknown', industry TEXT NOT NULL DEFAULT 'Unknown',
+            workforce TEXT NOT NULL DEFAULT 'Unknown', capabilities TEXT NOT NULL DEFAULT '[]',
+            implementation_requirement TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS vendor_fit_records (
+            requirement_id INTEGER NOT NULL REFERENCES requirement_profiles(id),
+            vendor_id INTEGER NOT NULL REFERENCES vendors(id), capability TEXT NOT NULL,
+            coverage_status TEXT NOT NULL CHECK(coverage_status IN
+                ('Confirmed Coverage','Partial Coverage','Unknown','Capability Gap','Evidence Gap')),
+            evidence_url TEXT NOT NULL DEFAULT '', rationale TEXT NOT NULL DEFAULT '', checked_on TEXT,
+            PRIMARY KEY(requirement_id, vendor_id, capability)
+        );
+        CREATE TABLE IF NOT EXISTS rfi_questions (
+            id INTEGER PRIMARY KEY, requirement_id INTEGER NOT NULL REFERENCES requirement_profiles(id),
+            vendor_id INTEGER REFERENCES vendors(id), section TEXT NOT NULL, question TEXT NOT NULL,
+            source_gap TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Draft'
+        );
+        CREATE TABLE IF NOT EXISTS market_signals (
+            id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, signal_type TEXT NOT NULL,
+            markets_mentioned TEXT NOT NULL DEFAULT '[]', first_detected TEXT NOT NULL,
+            signal_strength TEXT NOT NULL CHECK(signal_strength IN ('Weak','Building','Established')),
+            direction TEXT NOT NULL CHECK(direction IN ('Increasing','Stable','Weakening','Mixed')),
+            confidence TEXT NOT NULL CHECK(confidence IN ('High','Medium','Low')),
+            why_it_matters TEXT NOT NULL, last_verified TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS signal_evidence (
+            signal_id INTEGER NOT NULL REFERENCES market_signals(id),
+            evidence_id INTEGER NOT NULL REFERENCES evidence(id), relation TEXT NOT NULL
+                CHECK(relation IN ('supports','counter')),
+            PRIMARY KEY(signal_id, evidence_id, relation)
+        );
         CREATE INDEX IF NOT EXISTS idx_practice_market ON practices(market, domain);
         CREATE INDEX IF NOT EXISTS idx_evidence_practice ON evidence(practice_id);
+        CREATE INDEX IF NOT EXISTS idx_pattern_domain ON regional_patterns(domain, status);
+        CREATE INDEX IF NOT EXISTS idx_vendor_fit_requirement ON vendor_fit_records(requirement_id);
+        CREATE INDEX IF NOT EXISTS idx_signal_strength ON market_signals(signal_strength, direction);
         """)
         connection.executemany("INSERT OR IGNORE INTO markets VALUES (?,?,?)", MARKETS)
         connection.executemany(
@@ -160,6 +238,32 @@ def overview(connection: sqlite3.Connection) -> dict:
     }
 
 
+def data_readiness(connection: sqlite3.Connection) -> dict:
+    total = connection.execute("SELECT COUNT(*) FROM practices").fetchone()[0]
+    evidence_backed = connection.execute(
+        "SELECT COUNT(*) FROM practices WHERE status IN ('Verified','Ready to publish','Needs review','Conflicting')"
+    ).fetchone()[0]
+    traceable = connection.execute(
+        "SELECT COUNT(DISTINCT practice_id) FROM evidence WHERE url<>''"
+    ).fetchone()[0]
+    multi_source = connection.execute("""
+        SELECT COUNT(*) FROM (
+          SELECT practice_id FROM evidence WHERE tier<=3 GROUP BY practice_id
+          HAVING COUNT(DISTINCT domain)>=2
+        )
+    """).fetchone()[0]
+    vendors_by_market = {row[0]: row[1] for row in connection.execute(
+        "SELECT market,COUNT(DISTINCT vendor_id) FROM vendor_capabilities GROUP BY market")}
+    gates = {
+        "practice_coverage": {"value": evidence_backed / total if total else 0, "target": 0.80},
+        "traceability": {"value": traceable / total if total else 0, "target": 0.90},
+        "multi_source_validation": {"value": multi_source / total if total else 0, "target": 0.70},
+        "vendor_coverage": {"value": min(vendors_by_market.get(code, 0) for code, _, _ in MARKETS), "target": 5},
+    }
+    return {"ready_for_automated_phase2": all(item["value"] >= item["target"] for item in gates.values()),
+            "gates": gates, "unknown_discipline": "Missing values remain Unknown; no AI imputation."}
+
+
 def validate_url(value: str) -> tuple[str, str]:
     parsed = urlparse(value)
     if parsed.scheme not in ("https", "http") or not parsed.hostname or parsed.username or parsed.password:
@@ -171,7 +275,7 @@ def validate_url(value: str) -> tuple[str, str]:
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "GPIPrototype/0.1"
+    server_version = "GPIDecisionPrototype/0.2"
 
     def send_json(self, value: object, status: int = 200) -> None:
         body = json.dumps(value, ensure_ascii=False).encode("utf-8")
@@ -189,6 +293,13 @@ class Handler(BaseHTTPRequestHandler):
             with db() as connection:
                 if path == "/api/overview":
                     return self.send_json(overview(connection))
+                if path == "/api/phase2/readiness":
+                    return self.send_json(data_readiness(connection))
+                if path == "/api/phase2/schema":
+                    return self.send_json({"objects": [
+                        "CompanyArchetype", "RegionalPattern", "DesignPattern", "ContextProfile", "Scenario",
+                        "RequirementProfile", "VendorFitRecord", "RFIQuestion", "MarketSignal", "PracticeEvolution"
+                    ], "guardrail": "Decision support only; final HR decisions remain human-owned."})
                 if path == "/api/practices":
                     return self.send_json(practice_list(connection, query.get("market", [""])[0], query.get("domain", [""])[0]))
                 if re.fullmatch(r"/api/practices/\d+", path):

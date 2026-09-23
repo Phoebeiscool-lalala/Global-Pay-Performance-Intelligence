@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Pay &amp; Performance Decision Intelligence</title>
+<meta name="description" content="以可追溯外部证据支持跨市场比较、实践模式、情景分析和供应商需求覆盖判断。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232f5bff'/%3E%3Ctext x='16' y='21' font-size='12' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'%3EGPI%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<a class="skip-link" href="#main">跳到主内容</a>
+
+<div class="shell">
+
+  <!-- ======================= 侧边栏 ======================= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-mark">GPI</div>
+      <div class="brand-text">
+        <strong>Global Pay &amp; Performance</strong>
+        <span>Intelligence Workbench</span>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav" aria-label="主导航">
+      <a class="nav-item" href="#overview" data-view="overview"><span class="nav-ico">◧</span>总览<span class="nav-tag">Dashboard</span></a>
+      <div class="nav-group-label">KNOW</div>
+      <a class="nav-item" href="#practices" data-view="practices"><span class="nav-ico">≣</span>市场实践<span class="nav-tag">Practice</span></a>
+      <a class="nav-item" href="#vendors" data-view="vendors"><span class="nav-ico">⬡</span>供应商情报<span class="nav-tag">Vendor</span></a>
+      <a class="nav-item" href="#changes" data-view="changes"><span class="nav-ico">↻</span>市场变化<span class="nav-tag">Changes</span></a>
+      <div class="nav-group-label">UNDERSTAND &amp; COMPARE</div>
+      <a class="nav-item" href="#compare" data-view="compare"><span class="nav-ico">▦</span>区域情报<span class="nav-tag">Regional</span></a>
+      <a class="nav-item" href="#patterns" data-view="patterns"><span class="nav-ico">⌘</span>模式探索<span class="nav-tag">Patterns</span></a>
+      <a class="nav-item" href="#design" data-view="design"><span class="nav-ico">◈</span>设计模式库<span class="nav-tag">Design</span></a>
+      <a class="nav-item" href="#scenario" data-view="scenario"><span class="nav-ico">◫</span>Scenario Lab<span class="nav-tag">Options</span></a>
+      <a class="nav-item" href="#vendorfit" data-view="vendorfit"><span class="nav-ico">◎</span>Vendor Fit<span class="nav-tag">Fit &amp; RFI</span></a>
+      <a class="nav-item" href="#signals" data-view="signals"><span class="nav-ico">⌁</span>市场信号<span class="nav-tag">Signals</span></a>
+      <a class="nav-item" href="#ask" data-view="ask"><span class="nav-ico">?</span>Ask Intelligence<span class="nav-tag">Ask</span></a>
+      <a class="nav-item" href="#method" data-view="method"><span class="nav-ico">⚖</span>方法论与边界<span class="nav-tag">Method</span></a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="demo-flag">演示环境 · 数据为示例</div>
+      <div class="sidebar-meta">
+        <span id="side-refreshed"></span><br>
+        依据 <code>GPI PRD V0.2</code> 构建
+      </div>
+    </div>
+  </aside>
+
+  <div class="backdrop" id="backdrop" aria-hidden="true"></div>
+
+  <!-- ======================= 主区域 ======================= -->
+  <main class="main" id="main">
+
+    <!-- 顶栏 -->
+    <header class="topbar">
+      <button class="hamburger" id="hamburger" aria-label="打开菜单" aria-expanded="false">☰</button>
+      <div class="topbar-title">
+        <h1 id="page-title">总览</h1>
+        <p id="page-sub">Dashboard</p>
+      </div>
+      <div class="topbar-right">
+        <span class="chip chip-live">● 本地原型</span>
+        <span class="chip chip-lang">中文</span>
+      </div>
+    </header>
+
+    <!-- ============ 视图：总览 ============ -->
+    <section class="view" id="view-overview">
+      <div class="hero">
+        <div class="hero-body">
+          <h2>从外部情报走向可解释的决策支持</h2>
+          <p>在 <b>Practice · Vendor · Market Intelligence</b> 的证据基础上，识别跨市场差异、可复用模式与多个可选情景。平台呈现证据、假设和权衡，最终 HR 决策始终由人负责。</p>
+        </div>
+        <div class="hero-aside" id="hero-aside"></div>
+      </div>
+
+      <div class="stat-grid" id="stat-grid"></div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head"><h3>市场覆盖</h3><span class="card-hint">4 markets</span></div>
+          <div class="market-list" id="market-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>研究主题</h3><span class="card-hint">Topical coverage</span></div>
+          <div class="topic-preview" id="topic-preview"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>最近更新的结论</h3><span class="card-hint">Recent changes</span></div>
+        <div id="recent-changes"></div>
+      </div>
+    </section>
+
+    <!-- ============ 视图：市场实践 ============ -->
+    <section class="view" id="view-practices" hidden>
+      <div class="toolbar">
+        <div class="filters">
+          <div class="filter-group" id="market-filter" role="group" aria-label="按市场筛选"></div>
+          <select id="domain-filter" aria-label="按研究域筛选"></select>
+          <select id="status-filter" aria-label="按状态筛选"></select>
+        </div>
+        <span class="toolbar-count" id="practice-count"></span>
+      </div>
+      <div id="practice-list" class="practice-list"></div>
+    </section>
+
+    <!-- ============ 视图：对比矩阵 ============ -->
+    <section class="view" id="view-compare" hidden>
+      <div class="decision-banner"><b>Regional Intelligence</b><span>比较的是有证据范围的市场观察，不是“哪个市场更好”。每个区域结论都必须回溯到底层 Claim、Source、Population、Date 和 Confidence。</span></div>
+      <div class="toolbar">
+        <div class="filters">
+          <div class="filter-group" id="compare-market-filter" role="group" aria-label="选择对比市场"></div>
+        </div>
+        <span class="toolbar-count">8 个研究主题 × 已选市场</span>
+      </div>
+      <div class="card table-card">
+        <div class="table-scroll">
+          <table class="compare-table" id="compare-table"></table>
+        </div>
+      </div>
+      <div class="legend" id="compare-legend"></div>
+    </section>
+
+    <!-- ============ Phase 2：模式探索 ============ -->
+    <section class="view" id="view-patterns" hidden>
+      <div class="decision-banner"><b>Pattern Explorer</b><span>候选模式至少需要 3 条独立证据并覆盖 2 个市场或 Company Archetype；反向证据与 Evidence Gap 同时展示。</span></div>
+      <div class="card archetype-panel"><div class="card-head"><h3>Company Archetype</h3><span class="card-hint">仅用于缩小证据适用范围，不强制分类</span></div><div id="archetype-list" class="archetype-list"></div></div>
+      <div class="toolbar">
+        <div class="filters">
+          <select id="pattern-domain" aria-label="按领域筛选模式"></select>
+          <select id="pattern-status" aria-label="按状态筛选模式"></select>
+        </div>
+        <span class="toolbar-count" id="pattern-count"></span>
+      </div>
+      <div id="pattern-list" class="pattern-grid"></div>
+    </section>
+
+    <!-- ============ Phase 2：设计模式库 ============ -->
+    <section class="view" id="view-design" hidden>
+      <div class="decision-banner"><b>Practice Design Library</b><span>展示市场中观察到的结构、适用情境与 Trade-off，不使用“最佳实践”作为默认答案。</span></div>
+      <div class="toolbar"><div class="filter-group" id="design-filter" role="group" aria-label="设计模式类型"></div><span class="toolbar-count" id="design-count"></span></div>
+      <div id="design-list" class="design-grid"></div>
+    </section>
+
+    <!-- ============ Phase 2：Scenario Lab ============ -->
+    <section class="view" id="view-scenario" hidden>
+      <div class="decision-banner"><b>Scenario Lab</b><span>根据轻量业务 Context 生成多个可选结构；不排序、不推荐、不自动转化为政策。</span></div>
+      <div class="scenario-layout">
+        <form id="scenario-form" class="card context-panel">
+          <div class="card-head"><h3>Context &amp; Requirement</h3><span class="card-hint">不上传员工级数据</span></div>
+          <label>市场<select name="market" id="scenario-market"></select></label>
+          <label>行业<select name="industry"><option>Retail</option><option>Technology</option><option>Manufacturing</option><option>Financial Services</option><option>Other</option></select></label>
+          <label>Workforce<select name="workforce"><option>Store Sales</option><option>Office</option><option>Sales</option><option>Manufacturing</option><option>Mixed</option></select></label>
+          <label>业务目标<select name="goal"><option value="growth">Increase sales</option><option value="balance">Balance individual and team performance</option><option value="simple">Simplify administration</option></select></label>
+          <label>当前模式<select name="current"><option>Individual Sales Commission</option><option>Team Bonus</option><option>Annual Bonus</option><option>Unknown</option></select></label>
+          <label>约束<textarea name="constraints" rows="3" placeholder="例如：月度支付、管理能力有限、必须设置封顶"></textarea></label>
+          <button class="btn btn-primary" type="submit">生成可选情景</button>
+        </form>
+        <div><div id="scenario-results" class="scenario-results"></div></div>
+        <aside class="card evidence-rail" id="scenario-evidence"><div class="empty-state">选择输入并生成情景后，这里显示证据、假设和缺口。</div></aside>
+      </div>
+    </section>
+
+    <!-- ============ Phase 2：Vendor Fit ============ -->
+    <section class="view" id="view-vendorfit" hidden>
+      <div class="decision-banner"><b>Requirement-driven Vendor Fit</b><span>只显示需求覆盖和证据状态，不计算供应商总分，也不替用户选定供应商。</span></div>
+      <div class="fit-layout">
+        <form id="fit-form" class="card context-panel">
+          <div class="card-head"><h3>Requirement Builder</h3><span class="card-hint">可保存为模板（演示）</span></div>
+          <label>目标市场<select name="market" id="fit-market"></select></label>
+          <label>员工规模<select name="scale"><option>&lt;500</option><option>500–5,000</option><option>5,000–50,000</option><option>50,000+</option></select></label>
+          <fieldset><legend>必须能力</legend><div id="fit-capabilities" class="check-grid"></div></fieldset>
+          <button class="btn btn-primary" type="submit">分析需求覆盖</button>
+        </form>
+        <div class="card table-card"><div class="card-head"><h3>Capability Coverage Matrix</h3><span class="card-hint">Confirmed / Partial / Unknown / Gap</span></div><div class="table-scroll"><table class="fit-table" id="fit-table"></table></div></div>
+      </div>
+      <div class="card" id="fit-rfi"><div class="empty-state">提交需求后，Unknown 与 Evidence Gap 将生成差异化 RFI 问题。</div></div>
+    </section>
+
+    <!-- ============ Phase 2：市场信号 ============ -->
+    <section class="view" id="view-signals" hidden>
+      <div class="decision-banner"><b>Market Signal Detection</b><span>把多条变化聚合为值得关注的信号，同时保留支持与反向证据；不预测未来唯一趋势。</span></div>
+      <div id="signal-list" class="signal-list"></div>
+    </section>
+
+    <!-- ============ 视图：供应商情报 ============ -->
+    <section class="view" id="view-vendors" hidden>
+      <div class="toolbar">
+        <div class="filters">
+          <div class="filter-group" id="vendor-market-filter" role="group" aria-label="按市场筛选供应商"></div>
+        </div>
+        <span class="toolbar-count" id="vendor-count"></span>
+      </div>
+      <div id="vendor-list" class="vendor-list"></div>
+    </section>
+
+    <!-- ============ 视图：市场变化 ============ -->
+    <section class="view" id="view-changes" hidden>
+      <div class="card">
+        <div class="card-head">
+          <h3>已发布结论的版本历史</h3>
+          <span class="card-hint">仅展示已发布（Verified）的变更</span>
+        </div>
+        <div id="changes-list" class="changes-list"></div>
+      </div>
+    </section>
+
+    <!-- ============ 视图：Ask Intelligence ============ -->
+    <section class="view" id="view-ask" hidden>
+      <div class="ask-hero card">
+        <h3>Ask Intelligence</h3>
+        <p>只检索 <b>已验证（Verified）</b> 的内部情报记录。没有证据时拒绝猜测——不假装接入大模型或外部研究。</p>
+        <form class="ask-form" id="ask-form" autocomplete="off">
+          <input id="ask-input" type="search" maxlength="100" placeholder="例如：日本 薪酬调整 频率" aria-label="搜索已核验情报">
+          <button type="submit">检索</button>
+        </form>
+        <div class="ask-suggest" id="ask-suggest"></div>
+      </div>
+      <div id="ask-results"></div>
+    </section>
+
+    <!-- ============ 视图：方法论与边界 ============ -->
+    <section class="view" id="view-method" hidden>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head"><h3>可信度评分权重</h3><span class="card-hint">PRD 权重的可解释原型</span></div>
+          <div id="weight-chart" class="weight-chart"></div>
+          <p class="note">当前评分为权重原型，<b>不等于已验证的统计概率</b>；达到发布门槛后仍须研究员人工审核。仅 Tier 1–3 可支持市场实践（Tier 4 Vendor 与 Tier 5 未核验内容不能单独建立结论），单一来源不能达发布门槛，冲突证据强制标记。</p>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>来源 Tier 定义</h3><span class="card-hint">Source Tiers</span></div>
+          <div class="tier-list" id="tier-list"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>产品边界</h3><span class="card-hint">Honest boundaries</span></div>
+        <ul class="boundary-list" id="boundary-list"></ul>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>当前阶段</h3><span class="card-hint">Prototype status</span></div>
+        <div class="stage-note">
+          <p><b>Phase 2 决策支持原型</b>，尚未实现：认证、权限、审计日志、自动爬取、定时监测、外部 AI Agent、版权许可管理、通知、持久化与生产部署。生产化之前必须补齐这些控制，并将研究数据与公开访问界面隔离。</p>
+          <p>所有 Pattern、Scenario、Vendor Fit 与 Signal 都使用演示数据展示产品逻辑。它们不是实际市场研究结论，也不应直接用于员工薪酬、绩效或供应商采购决策。</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============ 详情抽屉 ============ -->
+<div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="drawer-panel">
+    <div class="drawer-head">
+      <div>
+        <span class="drawer-market" id="drawer-market"></span>
+        <h2 id="drawer-title"></h2>
+        <p id="drawer-question"></p>
+      </div>
+      <button class="drawer-close" id="drawer-close" aria-label="关闭">✕</button>
+    </div>
+    <div class="drawer-body" id="drawer-body"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
