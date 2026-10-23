@@ -1,0 +1,20 @@
+[project]
+name = "global-pay-performance-intelligence"
+version = "0.2.0"
+description = "Evidence-first decision intelligence for global pay & performance research"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.per-file-ignores]
+"tests/*" = ["N802", "N803", "N806"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true

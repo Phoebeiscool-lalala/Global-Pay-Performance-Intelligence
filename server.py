@@ -7,6 +7,7 @@ Bind only to loopback until those production controls exist.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import sqlite3
@@ -21,6 +22,9 @@ from urllib.parse import parse_qs, urlparse
 from models import ScenarioContext
 from services.scenario_engine import build_options, build_requirements
 from services.vendor_fit_engine import match_vendor
+
+logger = logging.getLogger("gpi")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ.get("GPI_DB_PATH", ROOT / "intelligence.sqlite3"))
@@ -505,8 +509,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 return self.wfile.write(content)
             self.send_json({"error": "Not found"}, 404)
-        except Exception as exc:
-            self.send_json({"error": str(exc)}, 500)
+        except Exception:
+            logger.exception("Unhandled error in GET %s", self.path)
+            self.send_json({"error": "Internal server error"}, 500)
 
     def do_POST(self) -> None:
         origin = self.headers.get("Origin", "")
@@ -597,15 +602,16 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"error": "Not found"}, 404)
         except (ValueError, KeyError, sqlite3.IntegrityError, json.JSONDecodeError) as exc:
             return self.send_json({"error": str(exc)}, 400)
-        except Exception as exc:
-            return self.send_json({"error": str(exc)}, 500)
+        except Exception:
+            logger.exception("Unhandled error in POST %s", self.path)
+            return self.send_json({"error": "Internal server error"}, 500)
 
 
 def main() -> None:
     initialize()
     port = int(os.environ.get("PORT", "8765"))
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"Global Pay Intelligence: http://127.0.0.1:{port}", flush=True)
+    logger.info("Global Pay Intelligence: http://127.0.0.1:%s", port)
     server.serve_forever()
 
 

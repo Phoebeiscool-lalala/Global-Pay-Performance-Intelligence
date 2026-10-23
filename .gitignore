@@ -5,3 +5,11 @@ __pycache__/
 .test-data/
 dist/
 
+
+# AI agent artifacts
+.omo/
+.openai/
+
+# OS
+.DS_Store
+Thumbs.db

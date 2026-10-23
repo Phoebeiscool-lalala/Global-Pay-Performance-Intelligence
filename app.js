@@ -329,7 +329,7 @@ function openEvidenceDrawer(claimIds, title = "Why we believe this") {
 
 /* ---------------- 评分逻辑（移植自 server.py confidence_for） ---------------- */
 
-const TODAY = new Date("2026-09-23T00:00:00+08:00");
+const TODAY = new Date();
 
 function daysSince(iso) {
   const d = new Date(iso + "T00:00:00+08:00");
