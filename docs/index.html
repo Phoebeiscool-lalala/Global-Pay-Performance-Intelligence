@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Pay & Performance Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090d;--bg2:#0e1018;--surface:#131620;--card:#181c28;--card2:#1e2334;
+  --border:#232940;--border2:#2c3450;
+  --text:#e8ecf4;--text2:#8e98b0;--text3:#5a6378;
+  --indigo:#6366f1;--indigo2:#818cf8;--indigo-bg:rgba(99,102,241,.1);
+  --green:#22c55e;--green-bg:rgba(34,197,94,.1);
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.1);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.1);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.1);
+  --cyan:#06b6d4;--purple:#a855f7;--pink:#ec4899;
+  --r:14px;--r-sm:10px;--r-xs:7px;
+}
+html{scroll-behavior:smooth;font-size:16px}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;overflow-x:hidden}
+a{color:var(--indigo2);text-decoration:none;transition:.2s}
+a:hover{color:#a5b4fc}
+code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:var(--surface);padding:2px 7px;border-radius:4px;border:1px solid var(--border)}
+.container{max-width:1100px;margin:0 auto;padding:0 28px}
+
+/* ═══ HERO ═══ */
+.hero{min-height:92vh;display:flex;align-items:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(ellipse 80% 60% at 50% 0%,rgba(99,102,241,.15),transparent),
+  radial-gradient(ellipse 50% 40% at 80% 80%,rgba(168,85,247,.08),transparent)}
+.hero .grid-bg{position:absolute;inset:0;background-image:
+  linear-gradient(rgba(99,102,241,.04) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(99,102,241,.04) 1px,transparent 1px);
+  background-size:60px 60px}
+.hero-content{position:relative;z-index:2;width:100%}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:7px 18px;background:var(--indigo-bg);border:1px solid rgba(99,102,241,.25);border-radius:100px;font-size:.78rem;font-weight:600;color:var(--indigo2);margin-bottom:28px;letter-spacing:.06em;text-transform:uppercase}
+.hero h1{font-size:clamp(2.4rem,6vw,4.2rem);font-weight:900;letter-spacing:-.04em;line-height:1.1;margin-bottom:18px}
+.hero h1 .gradient{background:linear-gradient(135deg,#c7d2fe 0%,#818cf8 40%,#a78bfa 70%,#c4b5fd 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero .desc{font-size:1.18rem;color:var(--text2);max-width:660px;margin-bottom:40px;line-height:1.8}
+.hero .desc strong{color:var(--text);font-weight:600}
+.hero-actions{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:56px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:var(--r-sm);font-size:.88rem;font-weight:600;transition:all .25s ease;cursor:pointer;border:none}
+.btn-primary{background:var(--indigo);color:#fff;box-shadow:0 4px 20px rgba(99,102,241,.35)}
+.btn-primary:hover{background:var(--indigo2);transform:translateY(-2px);box-shadow:0 8px 30px rgba(99,102,241,.4);color:#fff}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-outline:hover{border-color:var(--indigo);color:var(--indigo2);transform:translateY(-2px)}
+.btn svg{width:18px;height:18px}
+
+.hero-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.metric{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:var(--r);padding:22px;backdrop-filter:blur(20px)}
+.metric .icon-wrap{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.metric .num{font-size:1.85rem;font-weight:800;letter-spacing:-.02em;margin-bottom:2px}
+.metric .label{font-size:.76rem;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.07em}
+
+/* ═══ SECTIONS ═══ */
+.section{padding:80px 0}
+.section-label{display:inline-flex;align-items:center;gap:8px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--indigo2);margin-bottom:14px}
+.section-label::before{content:'';width:24px;height:2px;background:var(--indigo);border-radius:1px}
+.section-title{font-size:clamp(1.6rem,3.5vw,2.3rem);font-weight:800;letter-spacing:-.025em;margin-bottom:16px;line-height:1.25}
+.section-desc{font-size:1.02rem;color:var(--text2);max-width:600px;line-height:1.75}
+
+/* ═══ ARCHITECTURE ═══ */
+.arch-flow{margin-top:48px;position:relative}
+.arch-flow .chain{display:flex;align-items:center;gap:8px;overflow-x:auto;padding:20px 0;scrollbar-width:none}
+.arch-flow .chain::-webkit-scrollbar{display:none}
+.arch-node{flex-shrink:0;padding:14px 22px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);font-size:.82rem;font-weight:600;white-space:nowrap;position:relative;transition:all .3s}
+.arch-node:hover{border-color:var(--indigo);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.arch-node .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px}
+.arch-arrow{flex-shrink:0;color:var(--text3);font-size:1.2rem}
+
+/* ═══ FEATURES GRID ═══ */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:48px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:30px;transition:all .3s ease;position:relative;overflow:hidden}
+.feature-card:hover{border-color:var(--border2);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.feature-card .icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.feature-card .icon svg{width:22px;height:22px;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.feature-card h3{font-size:1.02rem;font-weight:700;margin-bottom:10px;letter-spacing:-.01em}
+.feature-card p{font-size:.84rem;color:var(--text2);line-height:1.7}
+
+/* ═══ TECH STACK ═══ */
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-top:40px}
+.tech-item{display:flex;align-items:center;gap:12px;padding:16px 18px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);transition:.25s}
+.tech-item:hover{border-color:var(--border2);transform:translateY(-2px)}
+.tech-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.tech-item span{font-size:.82rem;font-weight:500}
+
+/* ═══ SCORE ═══ */
+.scores-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-top:48px}
+.score-pill{background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);padding:22px 16px;text-align:center;transition:.25s}
+.score-pill:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.score-pill .val{font-size:2rem;font-weight:800;letter-spacing:-.03em}
+.score-pill .lbl{font-size:.72rem;color:var(--text3);margin-top:4px;font-weight:500}
+.score-pill .bar{height:4px;background:var(--surface);border-radius:2px;margin-top:12px;overflow:hidden}
+.score-pill .bar-fill{height:100%;border-radius:2px}
+
+/* ═══ IMPROVEMENTS ═══ */
+.improve-grid{display:grid;gap:12px;margin-top:40px}
+.improve-item{display:flex;align-items:center;gap:16px;padding:18px 22px;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);transition:.2s}
+.improve-item:hover{border-color:var(--border2);background:var(--card2)}
+.improve-item .tag{flex-shrink:0;padding:3px 10px;border-radius:5px;font-size:.68rem;font-weight:700;letter-spacing:.04em}
+.tag-p0{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.tag-p1{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
+.tag-p2{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+.tag-p3{background:rgba(107,114,128,.1);color:#9ca3af;border:1px solid var(--border)}
+.improve-item .text{flex:1;font-size:.85rem}
+.improve-item .text .t{font-weight:600;margin-bottom:2px}
+.improve-item .text .d{color:var(--text3);font-size:.78rem}
+.improve-item .check{flex-shrink:0;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.check-done{background:var(--green-bg);border:1px solid rgba(34,197,94,.2)}
+.check-done svg{width:14px;height:14px;stroke:var(--green);fill:none;stroke-width:2.5}
+.check-pending{background:rgba(107,114,128,.08);border:1px solid var(--border)}
+.check-pending svg{width:14px;height:14px;stroke:var(--text3);fill:none;stroke-width:2}
+
+/* ═══ TEST ═══ */
+.test-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px}
+.test-card{background:var(--card);border:1px solid var(--green-border,rgba(34,197,94,.15));border-radius:var(--r);padding:28px;text-align:center}
+.test-card .big{font-size:2.4rem;font-weight:800;color:var(--green);letter-spacing:-.03em}
+.test-card .lbl{font-size:.8rem;color:var(--text2);margin-top:4px}
+
+/* ═══ CTA ═══ */
+.cta{padding:80px 0;text-align:center;position:relative}
+.cta-box{background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(168,85,247,.08));border:1px solid rgba(99,102,241,.2);border-radius:20px;padding:56px 40px;position:relative;overflow:hidden}
+.cta-box h2{font-size:1.8rem;font-weight:800;margin-bottom:12px;letter-spacing:-.02em}
+.cta-box p{color:var(--text2);margin-bottom:32px;font-size:1.02rem}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+/* ═══ FOOTER ═══ */
+.footer{border-top:1px solid var(--border);padding:32px 0}
+.footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.footer p{font-size:.78rem;color:var(--text3)}
+.footer .mono{font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:4px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text2)}
+
+/* ═══ ANIMATIONS ═══ */
+.fade{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}
+.fade.visible{opacity:1;transform:translateY(0)}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:900px){
+  .hero-metrics{grid-template-columns:repeat(2,1fr)}
+  .features-grid{grid-template-columns:repeat(2,1fr)}
+  .scores-row{grid-template-columns:repeat(3,1fr)}
+  .test-row{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+  .hero{min-height:85vh}
+  .hero h1{font-size:2.2rem}
+  .hero-metrics{grid-template-columns:1fr 1fr}
+  .features-grid{grid-template-columns:1fr}
+  .scores-row{grid-template-columns:repeat(2,1fr)}
+  .test-row{grid-template-columns:1fr 1fr}
+  .section{padding:56px 0}
+  .improve-item{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ HERO ══════════ -->
+<header class="hero">
+  <div class="grid-bg"></div>
+  <div class="container hero-content">
+    <div class="hero-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-7-7H2m20 0h-3m-2.3-5.7l-2 2m-5.4 5.4l-2 2m0-9.4l2 2m5.4 5.4l2 2"/></svg>
+      Evidence-First Decision Intelligence
+    </div>
+    <h1>Global Pay &<br><span class="gradient">Performance Intelligence</span></h1>
+    <p class="desc">
+      依据 <strong>PRD Phase 2</strong> 设计的可解释跨市场薪酬绩效决策智能平台。从证据采集到供应商适配，
+      <strong>不排名、不推荐、保留 Unknown</strong> —— 让每个决策有据可查。
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/Phoebeiscool-lalala/Global-Pay-Performance-Intelligence" target="_blank" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+        View on GitHub
+      </a>
+      <a href="#architecture" class="btn btn-outline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Explore Architecture
+      </a>
+    </div>
+    <div class="hero-metrics">
+      <div class="metric">
+        <div class="icon-wrap" style="background:var(--indigo-bg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div>
+        <div class="num">27+</div>
+        <div class="label">Database Tables</div>
+      </div>
+      <div class="metric">
+        <div class="icon-wrap" style="background:var(--green-bg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/></svg></div>
+        <div class="num">20</div>
+        <div class="label">Tests Passing</div>
+      </div>
+      <div class="metric">
+        <div class="icon-wrap" style="background:var(--blue-bg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="num">5</div>
+        <div class="label">Evidence Tiers</div>
+      </div>
+      <div class="metric">
+        <div class="icon-wrap" style="background:var(--amber-bg)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+        <div class="num">4</div>
+        <div class="label">Markets (JP/KR/HK/TW)</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════ ARCHITECTURE ══════════ -->
+<section class="section fade" id="architecture">
+  <div class="container">
+    <div class="section-label">Architecture</div>
+    <h2 class="section-title">统一决策链</h2>
+    <p class="section-desc">从信息来源到决策洞察，每个环节可追溯、可审计、可质疑。</p>
+    <div class="arch-flow">
+      <div class="chain">
+        <div class="arch-node"><span class="dot" style="background:var(--cyan)"></span>Source</div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><span class="dot" style="background:var(--indigo)"></span>Claim</div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><span class="dot" style="background:var(--purple)"></span>Fact</div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><span class="dot" style="background:var(--green)"></span>Practice</div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><span class="dot" style="background:var(--amber)"></span>Requirement</div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><span class="dot" style="background:var(--pink)"></span>Vendor Fit</div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><span class="dot" style="background:var(--red)"></span>Scenario</div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node"><span class="dot" style="background:#fff"></span>Decision Insight</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FEATURES ══════════ -->
+<section class="section fade">
+  <div class="container">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">核心能力</h2>
+    <p class="section-desc">Phase 2 已实现的完整决策支持模块。</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="icon" style="background:var(--indigo-bg)"><svg viewBox="0 0 24 24" stroke="#818cf8"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg></div>
+        <h3>Regional Intelligence</h3>
+        <p>四市场矩阵、底层 Claim 状态、可信度、Common Practice、Market Difference 与 Evidence Gap。</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon" style="background:var(--green-bg)"><svg viewBox="0 0 24 24" stroke="#22c55e"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></div>
+        <h3>Pattern Explorer</h3>
+        <p>模式范围、组成、市场、Company Archetype、支持与反向证据、限制、状态及核验日期。</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon" style="background:var(--blue-bg)"><svg viewBox="0 0 24 24" stroke="#3b82f6"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+        <h3>Design Library</h3>
+        <p>绩效和销售激励结构、Potential Advantages、Trade-offs、Operational Complexity 与 Evidence。</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon" style="background:rgba(168,85,247,.1)"><svg viewBox="0 0 24 24" stroke="#a855f7"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+        <h3>Scenario Lab</h3>
+        <p>输入业务 Context 自动生成三个不排序的可选结构，展示证据、假设与缺口。不输出"推荐"。</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon" style="background:var(--amber-bg)"><svg viewBox="0 0 24 24" stroke="#f59e0b"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6"/><path d="M23 11h-6"/></svg></div>
+        <h3>Vendor Fit</h3>
+        <p>逐字段 Capability Coverage Matrix、差异化 RFI 问题包。仅输出 FIT/PARTIAL/GAP/UNKNOWN，不排名。</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon" style="background:var(--red-bg)"><svg viewBox="0 0 24 24" stroke="#ef4444"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <h3>Market Signals</h3>
+        <p>Signal Strength、Direction、Supporting Evidence、Counter Signals、Confidence 与 Why It Matters。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TECH STACK ══════════ -->
+<section class="section fade">
+  <div class="container">
+    <div class="section-label">Tech Stack</div>
+    <h2 class="section-title">技术栈</h2>
+    <p class="section-desc">零第三方依赖的 Python 后端 + 纯静态前端。</p>
+    <div class="tech-grid">
+      <div class="tech-item"><div class="tech-dot" style="background:#3b82f6"></div><span>Python 3.10+</span></div>
+      <div class="tech-item"><div class="tech-dot" style="background:#f59e0b"></div><span>SQLite (27+ tables)</span></div>
+      <div class="tech-item"><div class="tech-dot" style="background:var(--green)"></div><span>Vanilla JavaScript</span></div>
+      <div class="tech-item"><div class="tech-dot" style="background:var(--cyan)"></div><span>HTML / CSS</span></div>
+      <div class="tech-item"><div class="tech-dot" style="background:var(--purple)"></div><span>unittest</span></div>
+      <div class="tech-item"><div class="tech-dot" style="background:var(--pink)"></div><span>GitHub Actions CI</span></div>
+      <div class="tech-item"><div class="tech-dot" style="background:var(--amber)"></div><span>Ruff / Mypy</span></div>
+      <div class="tech-item"><div class="tech-dot" style="background:var(--indigo2)"></div><span>MIT License</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ SCORES ══════════ -->
+<section class="section fade">
+  <div class="container">
+    <div class="section-label">Code Review</div>
+    <h2 class="section-title">评审评分</h2>
+    <p class="section-desc">6 个维度综合评估。</p>
+    <div class="scores-row">
+      <div class="score-pill">
+        <div class="val" style="color:var(--green)">5</div>
+        <div class="lbl">产品设计</div>
+        <div class="bar"><div class="bar-fill" style="width:100%;background:var(--green)"></div></div>
+      </div>
+      <div class="score-pill">
+        <div class="val" style="color:var(--green)">4</div>
+        <div class="lbl">数据建模</div>
+        <div class="bar"><div class="bar-fill" style="width:80%;background:var(--green)"></div></div>
+      </div>
+      <div class="score-pill">
+        <div class="val" style="color:var(--amber)">3</div>
+        <div class="lbl">代码质量</div>
+        <div class="bar"><div class="bar-fill" style="width:60%;background:var(--amber)"></div></div>
+      </div>
+      <div class="score-pill">
+        <div class="val" style="color:var(--green)">4</div>
+        <div class="lbl">工程规范</div>
+        <div class="bar"><div class="bar-fill" style="width:80%;background:var(--green)"></div></div>
+      </div>
+      <div class="score-pill">
+        <div class="val" style="color:var(--green)">4</div>
+        <div class="lbl">安全</div>
+        <div class="bar"><div class="bar-fill" style="width:80%;background:var(--green)"></div></div>
+      </div>
+      <div class="score-pill">
+        <div class="val" style="color:var(--green)">5</div>
+        <div class="lbl">文档</div>
+        <div class="bar"><div class="bar-fill" style="width:100%;background:var(--green)"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ IMPROVEMENTS ══════════ -->
+<section class="section fade">
+  <div class="container">
+    <div class="section-label">Improvements</div>
+    <h2 class="section-title">已完成的改进</h2>
+    <p class="section-desc">commit a0767bd — 7 个文件，+295 行。</p>
+    <div class="improve-grid">
+      <div class="improve-item">
+        <div class="tag tag-p0">P0</div>
+        <div class="text"><div class="t">app.js 硬编码日期修复</div><div class="d">TODAY = new Date("2026-09-23...") &rarr; new Date()</div></div>
+        <div class="check check-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+      <div class="improve-item">
+        <div class="tag tag-p0">P0</div>
+        <div class="text"><div class="t">添加 MIT LICENSE</div><div class="d">明确开源协议，允许合法使用</div></div>
+        <div class="check check-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+      <div class="improve-item">
+        <div class="tag tag-p0">P0</div>
+        <div class="text"><div class="t">完善 .gitignore</div><div class="d">+ .omo/ .openai/ .DS_Store Thumbs.db</div></div>
+        <div class="check check-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+      <div class="improve-item">
+        <div class="tag tag-p2">P2</div>
+        <div class="text"><div class="t">server.py 添加 logging</div><div class="d">500 错误返回通用消息，内部细节写入日志</div></div>
+        <div class="check check-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+      <div class="improve-item">
+        <div class="tag tag-p2">P2</div>
+        <div class="text"><div class="t">补充 13 个测试</div><div class="d">confidence 边界 7 个 + API 错误路径 6 个</div></div>
+        <div class="check check-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+      <div class="improve-item">
+        <div class="tag tag-p2">P2</div>
+        <div class="text"><div class="t">GitHub Actions CI</div><div class="d">Python 3.10-3.12 矩阵测试 + ruff + JS check</div></div>
+        <div class="check check-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+      <div class="improve-item">
+        <div class="tag tag-p2">P2</div>
+        <div class="text"><div class="t">pyproject.toml</div><div class="d">Python &ge;3.10 + ruff/mypy 工具链配置</div></div>
+        <div class="check check-done"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+      <div class="improve-item">
+        <div class="tag tag-p1">P1</div>
+        <div class="text"><div class="t">server.py 模块拆分</div><div class="d">拆为 database.py + api/ 路由 + 入口</div></div>
+        <div class="check check-pending"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+      </div>
+      <div class="improve-item">
+        <div class="tag tag-p3">P3</div>
+        <div class="text"><div class="t">XSS 防护（CSP / DOMPurify）</div><div class="d">生产化前需补 CSP header</div></div>
+        <div class="check check-pending"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TEST ══════════ -->
+<section class="section fade">
+  <div class="container">
+    <div class="section-label">Test Results</div>
+    <h2 class="section-title">测试全部通过</h2>
+    <div class="test-row">
+      <div class="test-card">
+        <div class="big">20/20</div>
+        <div class="lbl">All Tests Passing</div>
+      </div>
+      <div class="test-card">
+        <div class="big">7</div>
+        <div class="lbl">Confidence Boundary</div>
+      </div>
+      <div class="test-card">
+        <div class="big">6</div>
+        <div class="lbl">API Error Path</div>
+      </div>
+      <div class="test-card">
+        <div class="big">7</div>
+        <div class="lbl">Phase2 + V2 Engine</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CTA ══════════ -->
+<section class="cta fade">
+  <div class="container">
+    <div class="cta-box">
+      <h2>开始探索</h2>
+      <p>零第三方依赖，<code>python server.py</code> 即可本地运行。</p>
+      <div class="cta-actions">
+        <a href="https://github.com/Phoebeiscool-lalala/Global-Pay-Performance-Intelligence" target="_blank" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+          GitHub Repository
+        </a>
+        <a href="https://github.com/Phoebeiscool-lalala/Global-Pay-Performance-Intelligence/blob/main/README.md" target="_blank" class="btn btn-outline">
+          Read the Docs
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer class="footer">
+  <div class="container footer-inner">
+    <p>Global Pay & Performance Decision Intelligence</p>
+    <div class="mono">commit a0767bd</div>
+  </div>
+</footer>
+
+<script>
+const obs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')})},{threshold:.12});
+document.querySelectorAll('.fade').forEach(el=>obs.observe(el));
+</script>
+</body>
+</html>
